@@ -267,7 +267,7 @@ export default function AuthPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: "linear-gradient(135deg, rgba(69,66,245,0.88) 0%, rgba(54,51,225,0.82) 45%, rgba(36,34,185,0.78) 100%), url('/attached_assets/generated_images/Hero_music_studio_interior_f15ae0f7.png')",
+            backgroundImage: "linear-gradient(135deg, rgba(69,66,245,0.30) 0%, rgba(54,51,225,0.30) 45%, rgba(36,34,185,0.30) 100%), url('/attached_assets/generated_images/Hero_music_studio_interior_f15ae0f7.png')",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundBlendMode: "overlay",
