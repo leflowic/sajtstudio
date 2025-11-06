@@ -88,10 +88,33 @@ function checkContactRateLimit(ip: string): { allowed: boolean; remainingTime?: 
   return { allowed: true };
 }
 
+// Middleware to check if user is banned
+function requireNotBanned(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.sendStatus(401);
+  }
+  
+  if (req.user!.banned) {
+    return res.status(403).json({ 
+      error: "Vaš nalog je suspendovan. Kontaktirajte administratora za više informacija.",
+      banned: true 
+    });
+  }
+  
+  next();
+}
+
 // Middleware to check if user is admin
 function requireAdmin(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.sendStatus(401);
+  }
+  
+  if (req.user!.banned) {
+    return res.status(403).json({ 
+      error: "Vaš nalog je suspendovan. Kontaktirajte administratora za više informacija.",
+      banned: true 
+    });
   }
   
   if (req.user!.role !== 'admin') {
@@ -105,6 +128,13 @@ function requireAdmin(req: any, res: any, next: any) {
 function requireVerifiedEmail(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.sendStatus(401);
+  }
+  
+  if (req.user!.banned) {
+    return res.status(403).json({ 
+      error: "Vaš nalog je suspendovan. Kontaktirajte administratora za više informacija.",
+      banned: true 
+    });
   }
   
   if (!req.user!.emailVerified) {
@@ -347,8 +377,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user profile (username, email)
   app.put("/api/user/update-profile", requireVerifiedEmail, async (req, res) => {
     try {
-      const { username, email } = req.body;
+      let { username, email } = req.body;
       const userId = req.user!.id;
+
+      // Normalize email and username to lowercase for consistency
+      if (email) email = email.toLowerCase();
+      if (username) username = username.toLowerCase();
 
       // Validation
       if (username && username.trim().length < 3) {
@@ -360,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if username can be changed (once per month)
-      if (username && username !== req.user!.username) {
+      if (username && username !== req.user!.username.toLowerCase()) {
         const user = await storage.getUser(userId);
         if (user?.usernameLastChanged) {
           const daysSinceLastChange = Math.floor(
@@ -381,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if email is already taken
-      if (email && email !== req.user!.email) {
+      if (email && email !== req.user!.email.toLowerCase()) {
         const existingUser = await storage.getUserByEmail(email);
         if (existingUser && existingUser.id !== userId) {
           return res.status(400).json({ error: "Email adresa je već zauzeta" });

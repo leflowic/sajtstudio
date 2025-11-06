@@ -332,6 +332,9 @@ export default function VideoSpots() {
                 onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
                 placeholder="https://www.youtube.com/watch?v=..."
               />
+              <p className="text-xs text-muted-foreground">
+                ⚠️ Napomena: Age-restricted YouTube videi (18+) ne mogu da se prikazuju preko iframe-a. Koristite samo javne videe bez starosnih ograničenja.
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">Opis</Label>

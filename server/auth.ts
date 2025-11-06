@@ -103,18 +103,24 @@ export function setupAuth(app: Express) {
       const { insertUserSchema } = await import("@shared/schema");
       const validatedData = insertUserSchema.parse(req.body);
       
-      const existingUser = await storage.getUserByUsername(validatedData.username);
+      // Normalize email and username to lowercase for consistency
+      const normalizedEmail = validatedData.email.toLowerCase();
+      const normalizedUsername = validatedData.username.toLowerCase();
+      
+      const existingUser = await storage.getUserByUsername(normalizedUsername);
       if (existingUser) {
         return res.status(400).send("Korisničko ime već postoji");
       }
 
-      const existingEmail = await storage.getUserByEmail(validatedData.email);
+      const existingEmail = await storage.getUserByEmail(normalizedEmail);
       if (existingEmail) {
         return res.status(400).send("Email adresa već postoji");
       }
 
       const user = await storage.createUser({
         ...validatedData,
+        email: normalizedEmail,
+        username: normalizedUsername,
         password: await hashPassword(validatedData.password),
       });
 
