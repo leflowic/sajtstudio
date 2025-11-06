@@ -195,4 +195,102 @@ export function setupAuth(app: Express) {
     const { password, ...userWithoutPassword } = req.user!;
     res.json(userWithoutPassword);
   });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email je obavezan" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent user enumeration
+      if (!user) {
+        console.log(`[AUTH] Password reset requested for non-existent email: ${email}`);
+        return res.json({ success: true, message: "Ako email postoji, kod za reset lozinke je poslat" });
+      }
+
+      // Generate 6-digit reset code
+      const resetToken = generateVerificationCode();
+      await storage.setPasswordResetToken(user.id, resetToken);
+
+      console.log(`[AUTH] Password reset requested for: ${email}`);
+      console.log(`[AUTH] Reset code generated: ${resetToken}`);
+
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Resetovanje Lozinke - Studio LeFlow',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #7c3aed;">Studio LeFlow</h2>
+              <h3>Zahtev za Resetovanje Lozinke</h3>
+              <p>Primili smo zahtev za resetovanje vaše lozinke. Unesite sledeći kod da biste kreirali novu lozinku:</p>
+              <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 30px 0; border-radius: 8px;">
+                <h1 style="color: #7c3aed; font-size: 36px; letter-spacing: 8px; margin: 0;">${resetToken}</h1>
+              </div>
+              <p>Ovaj kod ističe za 15 minuta.</p>
+              <p>Ako niste zatražili resetovanje lozinke, ignorišite ovaj email. Vaša lozinka neće biti promenjena.</p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+              <p style="color: #666; font-size: 12px;">Studio LeFlow - Profesionalna Muzička Produkcija</p>
+            </div>
+          `
+        });
+        console.log(`[AUTH] Password reset email sent successfully to ${email}`);
+      } catch (emailError: any) {
+        console.error("[AUTH] Failed to send password reset email:", emailError);
+        // Don't reveal if email exists - return generic error
+        return res.status(500).json({ 
+          error: "Greška pri slanju email-a. Molimo pokušajte ponovo." 
+        });
+      }
+
+      // Don't reveal user ID or any identifying information
+      res.json({ success: true, message: "Ako email postoji, kod za reset lozinke je poslat" });
+    } catch (error: any) {
+      console.error("[AUTH] Forgot password error:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { email, token, newPassword } = req.body;
+
+      if (!email || !token || !newPassword) {
+        return res.status(400).json({ error: "Svi parametri su obavezni" });
+      }
+
+      // Validate new password
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Lozinka mora imati najmanje 8 karaktera" });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(400).json({ error: "Nevažeći ili istekao kod za reset lozinke" });
+      }
+
+      // Verify reset token
+      const isValid = await storage.verifyPasswordResetToken(user.id, token);
+      if (!isValid) {
+        return res.status(400).json({ error: "Nevažeći ili istekao kod za reset lozinke" });
+      }
+
+      // Hash new password and update
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updatePassword(user.id, hashedPassword);
+      await storage.clearPasswordResetToken(user.id);
+
+      console.log(`[AUTH] Password successfully reset for user: ${email}`);
+
+      res.json({ success: true, message: "Lozinka je uspešno promenjena" });
+    } catch (error: any) {
+      console.error("[AUTH] Reset password error:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
 }

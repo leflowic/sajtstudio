@@ -47,6 +47,8 @@ export const users = pgTable("users", {
   termsAccepted: boolean("terms_accepted").notNull().default(false),
   emailVerified: boolean("email_verified").notNull().default(false),
   verificationCode: text("verification_code"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpiry: timestamp("password_reset_expiry"),
   usernameLastChanged: timestamp("username_last_changed"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

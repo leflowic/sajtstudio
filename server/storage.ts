@@ -52,6 +52,10 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   setVerificationCode(userId: number, code: string): Promise<void>;
   verifyEmail(userId: number, code: string): Promise<boolean>;
+  setPasswordResetToken(userId: number, token: string): Promise<void>;
+  verifyPasswordResetToken(userId: number, token: string): Promise<boolean>;
+  updatePassword(userId: number, newPassword: string): Promise<void>;
+  clearPasswordResetToken(userId: number): Promise<void>;
 
   // Projects
   createProject(data: { title: string; description: string; genre: string; mp3Url: string; userId: number; currentMonth: string }): Promise<Project>;
@@ -203,6 +207,37 @@ export class DatabaseStorage implements IStorage {
     }
     await db.update(users).set({ emailVerified: true, verificationCode: null }).where(eq(users.id, userId));
     return true;
+  }
+
+  async setPasswordResetToken(userId: number, token: string): Promise<void> {
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+    await db.update(users).set({ 
+      passwordResetToken: token, 
+      passwordResetExpiry: expiry 
+    }).where(eq(users.id, userId));
+  }
+
+  async verifyPasswordResetToken(userId: number, token: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user || user.passwordResetToken !== token) {
+      return false;
+    }
+    // Check if token has expired
+    if (!user.passwordResetExpiry || user.passwordResetExpiry < new Date()) {
+      return false;
+    }
+    return true;
+  }
+
+  async updatePassword(userId: number, newPassword: string): Promise<void> {
+    await db.update(users).set({ password: newPassword }).where(eq(users.id, userId));
+  }
+
+  async clearPasswordResetToken(userId: number): Promise<void> {
+    await db.update(users).set({ 
+      passwordResetToken: null, 
+      passwordResetExpiry: null 
+    }).where(eq(users.id, userId));
   }
 
   async updateUserProfile(userId: number, data: { username?: string; email?: string }): Promise<void> {
