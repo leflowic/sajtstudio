@@ -53,6 +53,7 @@ app.use((req, res, next) => {
     "img-src 'self' data: https:; " +
     "media-src 'self' https://utfs.io https://*.uploadthing.com; " +
     "connect-src 'self' https://*.uploadthing.com https://uploadthing-prod.s3.us-west-2.amazonaws.com; " +
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
     "frame-ancestors 'none';"
   );
   next();
