@@ -11,14 +11,14 @@ export default function Terms() {
       icon: CreditCard,
       title: "Politika Avansa",
       content: [
-        "Za sve usluge Studio LeFlow zahteva se obavezan avans u iznosu od 50% ukupne cene projekta.",
+        "Za sve usluge Studio LeFlow zahteva se obavezan avans u iznosu od 30% ukupne cene projekta.",
         "Avans se plaća pri rezervaciji termina i potvrđivanju dogovora o projektu.",
         "Avans je nepovratan u svim slučajevima, osim u situacijama kada Studio LeFlow ne može ispuniti dogovorene usluge iz objektivnih razloga."
       ]
     },
     {
       icon: AlertCircle,
-      title: "Razlogi Nepovrativosti Avansa",
+      title: "Razlozi Nepovrativosti Avansa",
       content: [
         "<strong>Rezervacija studio vremena:</strong> Vaš termin se rezerviše ekskluzivno za vas, što znači da studio odbija druge klijente u tom periodu. Otkazivanje termina u kratkom roku rezultira gubicima koje studio ne može nadoknaditi.",
         "<strong>Tehnička i kreativna priprema:</strong> Pre svakog termina, naš tim priprema opremu, podešava akustiku prostora i planira kreativni pristup na osnovu vaših potreba. Ova priprema zahteva vreme i stručnost.",
@@ -42,8 +42,8 @@ export default function Terms() {
       title: "Uslovi Plaćanja",
       content: [
         "<strong>Prihvaćeni načini plaćanja:</strong> Gotovina, bankovna transakcija, PayPal.",
-        "<strong>Avans (50%):</strong> Plaća se prilikom potvrde rezervacije.",
-        "<strong>Preostali iznos (50%):</strong> Plaća se po završetku projekta, pre isporuke finalnih fajlova.",
+        "<strong>Avans (30%):</strong> Plaća se prilikom potvrde rezervacije.",
+        "<strong>Preostali iznos (70%):</strong> Plaća se po završetku projekta, pre isporuke finalnih fajlova.",
         "Za veće projekte moguć je dogovor o ratama - kontaktirajte nas za poseban aranžman.",
         "Račun/Faktura se izdaje na zahtev klijenta."
       ]

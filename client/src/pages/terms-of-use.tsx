@@ -58,7 +58,7 @@ export default function TermsOfUsePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="font-semibold text-foreground mb-2">2.1 Uploud Projekata</h3>
+                <h3 className="font-semibold text-foreground mb-2">2.1 Upload Projekata</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
                   <li>Svaki registrovani korisnik može uploadovati <strong>maksimalno jedan (1) projekat mesečno</strong></li>
                   <li>Projekti moraju biti u MP3 formatu, maksimalne veličine <strong>100MB</strong></li>
