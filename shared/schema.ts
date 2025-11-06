@@ -131,6 +131,17 @@ export const cmsMedia = pgTable("cms_media", {
   uniquePageSectionAsset: unique().on(table.page, table.section, table.assetKey),
 }));
 
+// Video Spots table - for studio music video portfolio
+export const videoSpots = pgTable("video_spots", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  artist: text("artist").notNull(),
+  youtubeUrl: text("youtube_url").notNull(),
+  order: integer("order").notNull().default(0), // for custom ordering
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
@@ -241,3 +252,18 @@ export const insertCmsMediaSchema = createInsertSchema(cmsMedia).omit({
 
 export type InsertCmsContent = z.infer<typeof insertCmsContentSchema>;
 export type InsertCmsMedia = z.infer<typeof insertCmsMediaSchema>;
+
+// Video Spots schemas
+export const insertVideoSpotSchema = createInsertSchema(videoSpots).omit({
+  id: true,
+  createdAt: true,
+  order: true,
+}).extend({
+  title: z.string().min(3, "Naslov mora imati najmanje 3 karaktera"),
+  description: z.string().min(10, "Opis mora imati najmanje 10 karaktera"),
+  artist: z.string().min(2, "Ime izvođača mora imati najmanje 2 karaktera"),
+  youtubeUrl: z.string().url("Unesite validan YouTube URL").regex(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//, "URL mora biti sa YouTube-a"),
+});
+
+export type InsertVideoSpot = z.infer<typeof insertVideoSpotSchema>;
+export type VideoSpot = typeof videoSpots.$inferSelect;

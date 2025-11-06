@@ -21,6 +21,7 @@ import Giveaway from "@/pages/giveaway";
 import AdminPage from "@/pages/admin";
 import TermsOfUse from "@/pages/terms-of-use";
 import Settings from "@/pages/settings";
+import VideoSpots from "@/pages/video-spots";
 import NotFound from "@/pages/not-found";
 
 const pageVariants = {
@@ -65,6 +66,7 @@ function Router() {
               <Route path="/pravila" component={Terms} />
               <Route path="/tim" component={Team} />
               <Route path="/kontakt" component={Contact} />
+              <Route path="/spotovi" component={VideoSpots} />
               <Route path="/auth" component={AuthPage} />
               <Route path="/prijava" component={AuthPage} />
               <Route path="/registracija" component={AuthPage} />

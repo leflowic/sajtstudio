@@ -27,6 +27,7 @@ export function Header() {
     { name: "Giveaway", href: "/giveaway" },
     { name: "Pravila", href: "/pravila" },
     { name: "Tim", href: "/tim" },
+    { name: "Spotovi", href: "/spotovi" },
     { name: "Kontakt", href: "/kontakt" }
   ];
 

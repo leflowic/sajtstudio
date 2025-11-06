@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, type CmsContent, type CmsMedia } from "@shared/schema";
+import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, type CmsContent, type CmsMedia, type VideoSpot } from "@shared/schema";
 import { sendEmail, getLastVerificationCode } from "./resend-client";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import multer from "multer";
@@ -908,6 +908,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       await storage.deleteCmsMedia(id);
       res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // ============================================================================
+  // VIDEO SPOTS API ROUTES
+  // ============================================================================
+
+  // GET /api/video-spots - PUBLIC (get all video spots ordered)
+  app.get("/api/video-spots", async (_req, res) => {
+    try {
+      const spots = await storage.getVideoSpots();
+      res.json(spots);
+    } catch (error) {
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // POST /api/video-spots - ADMIN (create new video spot)
+  app.post("/api/video-spots", requireAdmin, async (req, res) => {
+    try {
+      const validated = insertVideoSpotSchema.parse(req.body);
+      const newSpot = await storage.createVideoSpot(validated);
+      res.json(newSpot);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Greška na serveru" });
+      }
+    }
+  });
+
+  // PUT /api/video-spots/:id - ADMIN (update video spot)
+  app.put("/api/video-spots/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Nevažeći ID" });
+      }
+      const validated = insertVideoSpotSchema.parse(req.body);
+      const updated = await storage.updateVideoSpot(id, validated);
+      res.json(updated);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Greška na serveru" });
+      }
+    }
+  });
+
+  // DELETE /api/video-spots/:id - ADMIN (delete video spot)
+  app.delete("/api/video-spots/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Nevažeći ID" });
+      }
+      await storage.deleteVideoSpot(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // PUT /api/video-spots/:id/order - ADMIN (update spot order)
+  app.put("/api/video-spots/:id/order", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { order } = req.body;
+      if (isNaN(id) || typeof order !== 'number') {
+        return res.status(400).json({ error: "Nevažeći parametri" });
+      }
+      const updated = await storage.updateVideoSpotOrder(id, order);
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Greška na serveru" });
     }

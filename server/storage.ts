@@ -14,6 +14,8 @@ import {
   type InsertCmsContent,
   type CmsMedia,
   type InsertCmsMedia,
+  type VideoSpot,
+  type InsertVideoSpot,
   contactSubmissions,
   users,
   projects,
@@ -22,6 +24,7 @@ import {
   settings,
   cmsContent,
   cmsMedia,
+  videoSpots,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -88,6 +91,13 @@ export interface IStorage {
   listCmsMedia(page?: string): Promise<CmsMedia[]>;
   upsertCmsMedia(data: InsertCmsMedia): Promise<CmsMedia>;
   deleteCmsMedia(id: number): Promise<void>;
+
+  // Video Spots
+  getVideoSpots(): Promise<VideoSpot[]>;
+  createVideoSpot(data: InsertVideoSpot): Promise<VideoSpot>;
+  updateVideoSpot(id: number, data: InsertVideoSpot): Promise<VideoSpot>;
+  deleteVideoSpot(id: number): Promise<void>;
+  updateVideoSpotOrder(id: number, order: number): Promise<VideoSpot>;
 
   // Session store
   sessionStore: Store;
@@ -524,6 +534,46 @@ export class DatabaseStorage implements IStorage {
   async getGiveawaySettings(): Promise<{ isActive: boolean }> {
     const setting = await this.getSetting('giveaway_active');
     return { isActive: setting?.value === 'true' };
+  }
+
+  // Video Spots
+  async getVideoSpots(): Promise<VideoSpot[]> {
+    return await db
+      .select()
+      .from(videoSpots)
+      .orderBy(videoSpots.order, desc(videoSpots.createdAt));
+  }
+
+  async createVideoSpot(data: InsertVideoSpot): Promise<VideoSpot> {
+    const [result] = await db
+      .insert(videoSpots)
+      .values(data)
+      .returning();
+    return result!;
+  }
+
+  async updateVideoSpot(id: number, data: InsertVideoSpot): Promise<VideoSpot> {
+    const [result] = await db
+      .update(videoSpots)
+      .set(data)
+      .where(eq(videoSpots.id, id))
+      .returning();
+    if (!result) throw new Error("Video spot not found");
+    return result;
+  }
+
+  async deleteVideoSpot(id: number): Promise<void> {
+    await db.delete(videoSpots).where(eq(videoSpots.id, id));
+  }
+
+  async updateVideoSpotOrder(id: number, order: number): Promise<VideoSpot> {
+    const [result] = await db
+      .update(videoSpots)
+      .set({ order })
+      .where(eq(videoSpots.id, id))
+      .returning();
+    if (!result) throw new Error("Video spot not found");
+    return result;
   }
 
   // Admin methods
