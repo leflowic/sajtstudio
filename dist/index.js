@@ -25,12 +25,14 @@ __export(schema_exports, {
   insertContactSubmissionSchema: () => insertContactSubmissionSchema,
   insertProjectSchema: () => insertProjectSchema,
   insertUserSchema: () => insertUserSchema,
+  insertVideoSpotSchema: () => insertVideoSpotSchema,
   projects: () => projects,
   projectsRelations: () => projectsRelations,
   session: () => session,
   settings: () => settings,
   users: () => users,
   usersRelations: () => usersRelations,
+  videoSpots: () => videoSpots,
   votes: () => votes,
   votesRelations: () => votesRelations
 });
@@ -39,7 +41,7 @@ import { pgTable, text, varchar, timestamp, serial, integer, boolean, unique, js
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var session, contactSubmissions, insertContactSubmissionSchema, users, projects, votes, comments, settings, cmsPages, cmsSections, cmsContentTypes, cmsContent, cmsMedia, usersRelations, projectsRelations, votesRelations, commentsRelations, insertUserSchema, insertProjectSchema, insertCommentSchema, insertCmsContentSchema, insertCmsMediaSchema;
+var session, contactSubmissions, insertContactSubmissionSchema, users, projects, votes, comments, settings, cmsPages, cmsSections, cmsContentTypes, cmsContent, cmsMedia, videoSpots, usersRelations, projectsRelations, votesRelations, commentsRelations, insertUserSchema, insertProjectSchema, insertCommentSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -153,6 +155,16 @@ var init_schema = __esm({
       // Unique constraint: one image per page+section+assetKey combination
       uniquePageSectionAsset: unique().on(table.page, table.section, table.assetKey)
     }));
+    videoSpots = pgTable("video_spots", {
+      id: serial("id").primaryKey(),
+      title: text("title").notNull(),
+      description: text("description").notNull(),
+      artist: text("artist").notNull(),
+      youtubeUrl: text("youtube_url").notNull(),
+      order: integer("order").notNull().default(0),
+      // for custom ordering
+      createdAt: timestamp("created_at").defaultNow().notNull()
+    });
     usersRelations = relations(users, ({ many }) => ({
       projects: many(projects),
       votes: many(votes),
@@ -233,6 +245,16 @@ var init_schema = __esm({
       section: z.enum(cmsSections),
       assetKey: z.string().min(1, "Asset key ne mo\u017Ee biti prazan"),
       filePath: z.string().min(1, "File path ne mo\u017Ee biti prazan")
+    });
+    insertVideoSpotSchema = createInsertSchema(videoSpots).omit({
+      id: true,
+      createdAt: true,
+      order: true
+    }).extend({
+      title: z.string().min(3, "Naslov mora imati najmanje 3 karaktera"),
+      description: z.string().min(10, "Opis mora imati najmanje 10 karaktera"),
+      artist: z.string().min(2, "Ime izvo\u0111a\u010Da mora imati najmanje 2 karaktera"),
+      youtubeUrl: z.string().url("Unesite validan YouTube URL").regex(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//, "URL mora biti sa YouTube-a")
     });
   }
 });
@@ -582,6 +604,27 @@ var DatabaseStorage = class {
   async getGiveawaySettings() {
     const setting = await this.getSetting("giveaway_active");
     return { isActive: setting?.value === "true" };
+  }
+  // Video Spots
+  async getVideoSpots() {
+    return await db.select().from(videoSpots).orderBy(videoSpots.order, desc(videoSpots.createdAt));
+  }
+  async createVideoSpot(data) {
+    const [result] = await db.insert(videoSpots).values(data).returning();
+    return result;
+  }
+  async updateVideoSpot(id, data) {
+    const [result] = await db.update(videoSpots).set(data).where(eq(videoSpots.id, id)).returning();
+    if (!result) throw new Error("Video spot not found");
+    return result;
+  }
+  async deleteVideoSpot(id) {
+    await db.delete(videoSpots).where(eq(videoSpots.id, id));
+  }
+  async updateVideoSpotOrder(id, order) {
+    const [result] = await db.update(videoSpots).set({ order }).where(eq(videoSpots.id, id)).returning();
+    if (!result) throw new Error("Video spot not found");
+    return result;
   }
   // Admin methods
   async getAdminStats() {
@@ -1629,6 +1672,69 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Gre\u0161ka na serveru" });
     }
   });
+  app2.get("/api/video-spots", async (_req, res) => {
+    try {
+      const spots = await storage.getVideoSpots();
+      res.json(spots);
+    } catch (error) {
+      res.status(500).json({ error: "Gre\u0161ka na serveru" });
+    }
+  });
+  app2.post("/api/video-spots", requireAdmin, async (req, res) => {
+    try {
+      const validated = insertVideoSpotSchema.parse(req.body);
+      const newSpot = await storage.createVideoSpot(validated);
+      res.json(newSpot);
+    } catch (error) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Gre\u0161ka na serveru" });
+      }
+    }
+  });
+  app2.put("/api/video-spots/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Neva\u017Ee\u0107i ID" });
+      }
+      const validated = insertVideoSpotSchema.parse(req.body);
+      const updated = await storage.updateVideoSpot(id, validated);
+      res.json(updated);
+    } catch (error) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Gre\u0161ka na serveru" });
+      }
+    }
+  });
+  app2.delete("/api/video-spots/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Neva\u017Ee\u0107i ID" });
+      }
+      await storage.deleteVideoSpot(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Gre\u0161ka na serveru" });
+    }
+  });
+  app2.put("/api/video-spots/:id/order", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { order } = req.body;
+      if (isNaN(id) || typeof order !== "number") {
+        return res.status(400).json({ error: "Neva\u017Ee\u0107i parametri" });
+      }
+      const updated = await storage.updateVideoSpotOrder(id, order);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Gre\u0161ka na serveru" });
+    }
+  });
   app2.get("/robots.txt", (req, res) => {
     const host = req.get("host") || "localhost:5000";
     const protocol = req.protocol || "https";
@@ -1908,7 +2014,7 @@ app.use(express2.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https://utfs.io https://*.uploadthing.com; connect-src 'self' https://*.uploadthing.com https://uploadthing-prod.s3.us-west-2.amazonaws.com; frame-ancestors 'none';"
+    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https://utfs.io https://*.uploadthing.com; connect-src 'self' https://*.uploadthing.com https://uploadthing-prod.s3.us-west-2.amazonaws.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'none';"
   );
   next();
 });
