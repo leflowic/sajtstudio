@@ -265,10 +265,10 @@ export default function AuthPage() {
 
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-10"
+          className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-overlay"
           style={{ backgroundImage: "url('/attached_assets/generated_images/Hero_music_studio_interior_f15ae0f7.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/90 to-primary/85" />
         
         <div className="relative z-10 flex flex-col items-center justify-center text-center p-12 text-white w-full">
           <div className="mb-8">
