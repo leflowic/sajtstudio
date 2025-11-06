@@ -72,3 +72,11 @@ The website features a modern design utilizing Tailwind CSS and shadcn/ui compon
   - Users can now login with any case variation of their email/username (e.g., User@Email.com, user@email.com)
 - **YouTube Age-Restricted Warning**: Added warning in admin panel when adding YouTube videos - age-restricted videos (18+) cannot be embedded via iframe and will not display correctly
 - **Open Graph Social Media Preview**: Configured Open Graph meta tags with Studio LeFlow logo for Instagram/Facebook/Twitter link previews. Added `/public` static folder served at `/public/og-image.jpg`. Absolute URLs generated for proper social media crawling. Image dimensions: 1200x630px (optimal for all platforms).
+- **Forgot Password System**: Complete password reset flow with 6-digit email verification codes:
+  - Added `passwordResetToken` and `passwordResetExpiry` fields to users table (15-minute expiration)
+  - Backend routes: `/api/forgot-password` (request reset) and `/api/reset-password` (confirm new password)
+  - Integrated into auth-page.tsx with smooth UI flow (forgot-password → reset-password → reset-success views)
+  - Security: Prevents user enumeration attacks - generic responses never reveal if email exists
+  - Email template matches verification email design (#7c3aed brand color)
+  - Reset form email field is read-only to prevent accidental edits
+  - Minimum password length: 8 characters
