@@ -192,7 +192,7 @@ export default function TermsOfUsePage() {
                 <h3 className="font-semibold text-foreground mb-2">4.4 Prijava Kršenja Autorskih Prava</h3>
                 <p className="text-muted-foreground">
                   Ako smatrate da vaša autorska prava bivaju povređena sadržajem na Platformi, 
-                  kontaktirajte nas na: <strong>leflowbusiness@gmail.com</strong>
+                  kontaktirajte nas na: <strong>info@studioleflow.com</strong>
                 </p>
               </div>
             </CardContent>
@@ -329,8 +329,9 @@ export default function TermsOfUsePage() {
               </p>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="font-semibold text-foreground mb-2">Studio LeFlow</p>
-                <p>Email: <strong>leflowbusiness@gmail.com</strong></p>
-                <p>Instagram: <strong>@proddiflow</strong></p>
+                <p>Email: <strong>info@studioleflow.com</strong></p>
+                <p>Telefon: <strong>+381 63 734 7023</strong></p>
+                <p>Instagram: <strong>@studioleflow</strong></p>
                 <p>Lokacija: Beograd, Srbija</p>
               </div>
             </CardContent>

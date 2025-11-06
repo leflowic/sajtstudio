@@ -42,6 +42,12 @@ The website features a modern design utilizing Tailwind CSS and shadcn/ui compon
   - Fail-safe: production fails if RESEND_FROM_EMAIL is missing
 - **UploadThing**: File upload service specifically for MP3 files (max 16MB per file).
 
+## Contact Information
+- **Email**: info@studioleflow.com
+- **Phone**: +381 63 734 7023
+- **Instagram**: @studioleflow
+- **Location**: Beograd, Srbija
+
 ## Recent Updates (2025-11-06)
 - **Email System**: Migrated to production Resend with verified domain, development fallback implemented
 - **Page Transitions**: Enhanced with smooth scale + fade animations (0.4s duration, professional easing curve)
@@ -55,3 +61,5 @@ The website features a modern design utilizing Tailwind CSS and shadcn/ui compon
 - **Deployment Configuration**: .gitignore created, build optimizations verified, deployment target set to Autoscale
 - **Ready for Production**: All systems tested and verified, production build successful (20.53s), verification modal working on all devices
 - **Replit Environment Setup**: GitHub import successfully configured - database migrated, workflow set up on port 5000, dependencies installed, server running in development mode
+- **Contact Information Update**: Updated all contact information across site - email changed to info@studioleflow.com, phone +381 63 734 7023, Instagram @studioleflow added, working hours section removed from footer
+- **CSP Headers**: Added frame-src directive for YouTube iframe support (youtube.com and youtube-nocookie.com) to enable video embeds on Projekti page

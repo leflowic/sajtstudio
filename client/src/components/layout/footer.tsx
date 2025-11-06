@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { MapPin, Phone, Mail } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram } from "lucide-react";
 import { FadeInWhenVisible } from "@/components/motion/FadeIn";
 import leflowLogo from "@/assets/leflow-logo.png";
 
@@ -31,7 +31,7 @@ export function Footer() {
   return (
     <footer className="bg-muted/30 border-t">
       <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
           <FadeInWhenVisible delay={0.1}>
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -52,14 +52,20 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="w-4 h-4" />
-                <a href="tel:+381XXXXXXXXX" className="hover:text-primary transition-colors">
-                  +381 XX XXX XXXX
+                <a href="tel:+381637347023" className="hover:text-primary transition-colors">
+                  +381 63 734 7023
                 </a>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="w-4 h-4" />
-                <a href="mailto:info@studioleflow.rs" className="hover:text-primary transition-colors">
-                  info@studioleflow.rs
+                <a href="mailto:info@studioleflow.com" className="hover:text-primary transition-colors">
+                  info@studioleflow.com
+                </a>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Instagram className="w-4 h-4" />
+                <a href="https://instagram.com/studioleflow" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  @studioleflow
                 </a>
               </div>
             </div>
@@ -104,19 +110,6 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-            </div>
-          </FadeInWhenVisible>
-
-          <FadeInWhenVisible delay={0.4}>
-            <div>
-              <h3 className="font-bold mb-4" data-testid="text-footer-hours-title">Radno Vreme</h3>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>Ponedeljak - Nedelja</p>
-              <p className="font-semibold text-foreground">10:00 - 22:00</p>
-              <p className="mt-4 text-xs">
-                Termini se zakazuju unapred. Pozovite nas ili pošaljite upit putem kontakt forme.
-              </p>
-            </div>
             </div>
           </FadeInWhenVisible>
         </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { MapPin, Phone, Mail, Clock, ArrowLeft, Send } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, ArrowLeft, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { FadeInWhenVisible } from "@/components/motion/FadeIn";
 import { Button } from "@/components/ui/button";
@@ -69,20 +69,20 @@ export default function Contact() {
     {
       icon: Phone,
       title: "Telefon",
-      content: "+381 XX XXX XXXX",
-      link: "tel:+381XXXXXXXXX"
+      content: "+381 63 734 7023",
+      link: "tel:+381637347023"
     },
     {
       icon: Mail,
       title: "Email",
-      content: "info@studioleflow.rs",
-      link: "mailto:info@studioleflow.rs"
+      content: "info@studioleflow.com",
+      link: "mailto:info@studioleflow.com"
     },
     {
-      icon: Clock,
-      title: "Radno Vreme",
-      content: "Pon - Ned: 10:00 - 22:00",
-      link: null
+      icon: Instagram,
+      title: "Instagram",
+      content: "@studioleflow",
+      link: "https://instagram.com/studioleflow"
     }
   ];
 
@@ -97,7 +97,7 @@ export default function Contact() {
     <div className="min-h-screen py-12 lg:py-20">
       <SEO
         title="Kontakt - Studio LeFlow | Rezervišite Termin za Snimanje"
-        description="Kontaktirajte Studio LeFlow za rezervaciju termina. Snimanje pesama, miks i mastering, voice over, podcast produkcija. Beograd, Srbija. Email: leflowbusiness@gmail.com"
+        description="Kontaktirajte Studio LeFlow za rezervaciju termina. Snimanje pesama, miks i mastering, voice over, podcast produkcija. Beograd, Srbija. Email: info@studioleflow.com, Tel: +381 63 734 7023"
         keywords={[
           "kontakt studio leflow",
           "rezervacija studio beograd",
@@ -107,8 +107,7 @@ export default function Contact() {
           "studio beograd adresa",
           "studio leflow kontakt",
           "leflow cena",
-          "studio rezervacija online",
-          "studio beograd radno vreme"
+          "studio rezervacija online"
         ]}
       />
       <div className="max-w-7xl mx-auto px-6">
@@ -335,10 +334,10 @@ export default function Contact() {
                   Pozovite nas direktno
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Za hitne zakazivanje ili dodatna pitanja, slobodno nas pozovite tokom radnog vremena.
+                  Za hitne zakazivanje ili dodatna pitanja, slobodno nas pozovite.
                 </p>
                 <Button variant="outline" className="w-full" asChild data-testid="button-call">
-                  <a href="tel:+381XXXXXXXXX">
+                  <a href="tel:+381637347023">
                     <Phone className="mr-2 w-4 h-4" />
                     Pozovi Sada
                   </a>
