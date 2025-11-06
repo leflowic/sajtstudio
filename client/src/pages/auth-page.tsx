@@ -263,19 +263,23 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-overlay"
-          style={{ backgroundImage: "url('/attached_assets/generated_images/Hero_music_studio_interior_f15ae0f7.png')" }}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden text-white">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "linear-gradient(135deg, rgba(69,66,245,0.88) 0%, rgba(54,51,225,0.82) 45%, rgba(36,34,185,0.78) 100%), url('/attached_assets/generated_images/Hero_music_studio_interior_f15ae0f7.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundBlendMode: "overlay",
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/90 to-primary/85" />
         
-        <div className="relative z-10 flex flex-col items-center justify-center text-center p-12 text-white w-full">
-          <div className="mb-8">
-            <Music className="w-24 h-24 mx-auto mb-6" />
+        <div className="relative z-10 flex flex-col items-center justify-center text-center p-12 w-full gap-6">
+          <div>
+            <Music className="w-24 h-24 mx-auto" />
           </div>
           
-          <h2 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight font-[Montserrat] max-w-2xl mx-auto">
+          <h2 className="text-4xl lg:text-5xl font-bold tracking-tight font-[Montserrat] max-w-2xl mx-auto">
             Studio LeFlow Community
           </h2>
           
