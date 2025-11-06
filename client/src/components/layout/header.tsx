@@ -65,7 +65,7 @@ export function Header() {
             <span className="text-xl font-bold font-[Montserrat] uppercase">STUDIO LEFLOW</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             {navigation.map((item) => (
               <motion.div key={item.name} whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
                 <Link 
@@ -126,7 +126,7 @@ export function Header() {
             </button>
           </nav>
 
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             <ThemeToggle />
             {user ? (
               <>
@@ -161,7 +161,7 @@ export function Header() {
           </div>
 
           <button
-            className="md:hidden p-2 hover-elevate rounded-lg"
+            className="lg:hidden p-2 hover-elevate rounded-lg"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             data-testid="button-mobile-menu"
           >
@@ -174,7 +174,7 @@ export function Header() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t" data-testid="mobile-menu">
+          <div className="lg:hidden py-4 border-t" data-testid="mobile-menu">
             <nav className="flex flex-col gap-2">
               {navigation.map((item) => (
                 <Link 
