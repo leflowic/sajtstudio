@@ -8,6 +8,7 @@ import { FadeInWhenVisible } from "@/components/motion/FadeIn";
 import { EditableText } from "@/components/cms/EditableText";
 import { EditableImage } from "@/components/cms/EditableImage";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { SEO } from "@/components/SEO";
 import type { CmsContent } from "@shared/schema";
 import heroImage from "@assets/generated_images/hero-optimized.webp";
@@ -233,6 +234,8 @@ export default function Home() {
             </Button>
           </motion.div>
         </div>
+        
+        <ScrollIndicator targetId="usluge" />
       </section>
 
       <section className="py-20 lg:py-32 bg-background" id="usluge">
