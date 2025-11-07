@@ -82,6 +82,8 @@ export interface IStorage {
   getSetting(key: string): Promise<Setting | undefined>;
   setSetting(key: string, value: string): Promise<void>;
   getGiveawaySettings(): Promise<{ isActive: boolean }>;
+  getMaintenanceMode(): Promise<boolean>;
+  setMaintenanceMode(isActive: boolean): Promise<void>;
 
   // CMS Content
   getCmsContent(page: string, section: string, contentKey: string): Promise<CmsContent | undefined>;
@@ -571,6 +573,15 @@ export class DatabaseStorage implements IStorage {
   async getGiveawaySettings(): Promise<{ isActive: boolean }> {
     const setting = await this.getSetting('giveaway_active');
     return { isActive: setting?.value === 'true' };
+  }
+
+  async getMaintenanceMode(): Promise<boolean> {
+    const setting = await this.getSetting('maintenance_mode');
+    return setting?.value === 'true';
+  }
+
+  async setMaintenanceMode(isActive: boolean): Promise<void> {
+    await this.setSetting('maintenance_mode', isActive.toString());
   }
 
   // Video Spots

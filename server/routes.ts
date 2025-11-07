@@ -147,9 +147,78 @@ function requireVerifiedEmail(req: any, res: any, next: any) {
   next();
 }
 
+// Middleware to check if site is in maintenance mode
+async function checkMaintenanceMode(req: any, res: any, next: any) {
+  // Allow access to admin routes and auth routes
+  const allowedPaths = [
+    '/api/maintenance',
+    '/api/login',
+    '/api/logout',
+    '/api/user',
+    '/api/admin',
+  ];
+  
+  // Check if the request is for an allowed path
+  const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+  
+  if (isAllowedPath) {
+    return next();
+  }
+  
+  // If user is admin, allow access
+  if (req.isAuthenticated() && req.user!.role === "admin") {
+    return next();
+  }
+  
+  // Check if maintenance mode is active
+  const isMaintenanceMode = await storage.getMaintenanceMode();
+  
+  if (isMaintenanceMode) {
+    return res.status(503).json({ 
+      error: "Sajt je trenutno u pripremi",
+      maintenanceMode: true 
+    });
+  }
+  
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes: /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
+
+  // Apply maintenance mode middleware to all routes except allowed paths
+  app.use(checkMaintenanceMode);
+
+  // Maintenance mode API routes (admin only)
+  app.get("/api/maintenance", requireAdmin, async (_req, res) => {
+    try {
+      const isActive = await storage.getMaintenanceMode();
+      res.json({ maintenanceMode: isActive });
+    } catch (error) {
+      console.error("Error getting maintenance mode:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  app.post("/api/maintenance", requireAdmin, async (req, res) => {
+    try {
+      const { maintenanceMode } = req.body;
+      
+      if (typeof maintenanceMode !== "boolean") {
+        return res.status(400).json({ error: "maintenanceMode mora biti boolean" });
+      }
+      
+      await storage.setMaintenanceMode(maintenanceMode);
+      
+      console.log(`[ADMIN] Maintenance mode ${maintenanceMode ? 'aktiviran' : 'deaktiviran'} od strane ${req.user!.username}`);
+      
+      res.json({ success: true, maintenanceMode });
+    } catch (error) {
+      console.error("Error setting maintenance mode:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
 
   // Development debug endpoint for verification codes (only in development mode)
   app.get("/api/debug/verification-code", (req, res) => {
