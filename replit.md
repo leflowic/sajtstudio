@@ -75,6 +75,14 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
 - **"Usluge" Navigation Fix**: Fixed hash navigation bug in header.tsx by using Wouter's setLocation("/#usluge") instead of window.location.href for SPA navigation, added useEffect in home.tsx to detect #usluge hash and smoothly scroll to services section after layout paint (100ms delay)
 - **Service Images Optimization**: Re-cropped WA47 microphone and Yamaha HS8 images with wider view (90% width from original, less zoom) for better context visibility - microphone capsule and shock mount more visible, speaker cone and cabinet more prominent
 - **Newsletter Subscription System**: Complete newsletter system with double opt-in email confirmation, 5 backend endpoints, admin statistics/export functionality
+- **Newsletter Campaign Functionality**: Admin can create and send newsletter campaigns with rich text editor (Tiptap-based):
+  - RichTextEditor component with formatting toolbar: bold, italic, underline, H2/H3 headings, bullet/ordered lists, text alignment (left/center/right), link insertion, undo/redo
+  - Newsletter composition form in admin panel with subject input and rich text editor
+  - POST /api/newsletter/send endpoint - broadcasts HTML email to all confirmed subscribers using Promise.all
+  - DELETE /api/newsletter/subscribers/:id endpoint - admin can remove individual subscribers with AlertDialog confirmation
+  - Real-time stats display showing number of recipients before sending
+  - Loading states and error handling for send operation
+  - Installed @tiptap/react, @tiptap/starter-kit, @tiptap/extension-link, @tiptap/extension-underline, @tiptap/extension-text-align packages
 - **2FA Admin Login During Maintenance**: Two-Factor Authentication for admin login during maintenance mode with 6-digit email codes
 - **Maintenance Mode**: Site-wide maintenance control system for administrators
 - **Admin Audio Preview for Giveaway Projects**: Integrated HTML5 audio player in pending project cards allowing admins to listen to user-submitted songs before approval, preventing spam/troll submissions with full playback controls (play/pause/seek/volume)
