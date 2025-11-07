@@ -39,6 +39,17 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
 - **UploadThing**: File upload service for MP3 files (max 16MB per file).
 
 ## Recent Updates (2025-11-07)
+- **Content Protection System**: Implemented comprehensive image and logo protection across entire site:
+  - Added three-layer protection to all images and logos: `draggable={false}`, `select-none` CSS class, and `onContextMenu` prevention
+  - Blocks drag/drop, text selection, and right-click context menu (prevents "Open image in new tab")
+  - Applied to OptimizedImage component (services, equipment, hero backgrounds)
+  - Applied to EditableImage component (CMS-managed images) - click-to-upload functionality preserved in edit mode
+  - Applied to logo images in header.tsx and footer.tsx
+  - Maintains all existing functionality while preventing unauthorized content copying
+- **Hero Background Darkening**: Increased hero overlay opacity to reduce background visibility:
+  - Changed from `from-black/30 via-black/30 to-black/30` to `from-black/65 via-black/65 to-black/65`
+  - Darker overlay (65%) makes studio panorama background less visible as requested
+  - Text readability maintained with higher contrast
 - **Equipment Showcase with Real Images**: Redesigned "Studio Oprema" section with Card components featuring real studio equipment photography:
   - 4 equipment items in responsive 2-column grid (md:grid-cols-2, max-w-6xl)
   - Each card includes: OptimizedImage (h-48) + icon + heading + description
@@ -50,9 +61,6 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
   - Added hover-elevate animation to cards for professional interaction
   - Maintained Headphones and CheckCircle2 icons for visual consistency
   - FadeInWhenVisible animations with staggered delays (0.1-0.4s)
-- **Hero Background Opacity Reduction**: Reduced hero gradient overlay opacity for better studio panorama visibility:
-  - Changed from `from-black/55 via-black/45 to-black/65` to `from-black/40 via-black/30 to-black/50`
-  - 15-point reduction across all gradient stops allows background image to show through more clearly while maintaining text readability
 - **Login Page Visual Enhancement**: Replaced AI-generated transparent hero image with real MIDI workstation studio photo on auth-page.tsx (3 instances across login/forgot-password/reset-password views), maintains grayscale + primary gradient overlay
 - **"Usluge" Navigation Fix**: Fixed hash navigation bug in header.tsx by using Wouter's setLocation("/#usluge") instead of window.location.href for SPA navigation, added useEffect in home.tsx to detect #usluge hash and smoothly scroll to services section after layout paint (100ms delay)
 - **Service Images Optimization**: Re-cropped WA47 microphone and Yamaha HS8 images with wider view (90% width from original, less zoom) for better context visibility - microphone capsule and shock mount more visible, speaker cone and cabinet more prominent

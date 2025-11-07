@@ -101,18 +101,22 @@ export default function Home() {
     <div className="min-h-screen">
       <SEO
         title="Studio LeFlow - Muzički Studio Beograd | Snimanje Pesama, Miks, Mastering"
-        description="Profesionalni muzički studio u Beogradu. Snimanje vokala, miks i mastering, voice over, podcast produkcija. WA-47 mikrofon, Apollo Twin X interface, Yamaha HS8 monitori. Rezervišite termin!"
+        description="Vrhunski muzički studio u Beogradu. Snimanje, mix/mastering, instrumentali, video spotovi. WA-47, Apollo Twin X, UAD plugins. Preko 5 godina iskustva."
         keywords={[
+          "studio leflow",
+          "leflow studio",
+          "leflow",
+          "leflow beograd",
+          "studio leflow beograd",
+          "leflow studio beograd",
           "muzički studio beograd",
           "muzicki studio beograd",
           "snimanje pesme beograd",
           "snimanje vokala beograd",
           "miks i mastering",
           "mix mastering beograd",
-          "studio leflow",
-          "leflow",
-          "leflow beograd",
           "muzička produkcija",
+          "muzicka produkcija",
           "audio produkcija beograd",
           "recording studio belgrade",
           "voice over studio",
@@ -120,12 +124,15 @@ export default function Home() {
           "producent muzike beograd",
           "beatmaker beograd",
           "snimanje pesme dorćol",
-          "najbolji muzički studio beograd"
+          "najbolji muzički studio beograd",
+          "leflow music studio",
+          "music studio belgrade"
         ]}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "MusicRecordingStudio",
           "name": "Studio LeFlow",
+          "alternateName": ["LeFlow Studio", "LeFlow", "Studio LeFlow Beograd", "LeFlow Studio Beograd"],
           "description": "Profesionalni muzički studio u Beogradu. Snimanje vokala, miks i mastering, voice over, podcast produkcija.",
           "address": {
             "@type": "PostalAddress",

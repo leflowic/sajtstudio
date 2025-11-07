@@ -100,12 +100,15 @@ export default function Contact() {
         description="Kontaktirajte Studio LeFlow za rezervaciju termina. Snimanje pesama, miks i mastering, voice over, podcast produkcija. Beograd, Srbija. Email: info@studioleflow.com, Tel: +381 63 734 7023"
         keywords={[
           "kontakt studio leflow",
+          "leflow studio kontakt",
+          "leflow kontakt",
           "rezervacija studio beograd",
           "studio termin beograd",
           "muzički studio kontakt",
           "snimanje pesme rezervacija",
           "studio beograd adresa",
           "studio leflow kontakt",
+          "leflow studio beograd kontakt",
           "leflow cena",
           "studio rezervacija online"
         ]}

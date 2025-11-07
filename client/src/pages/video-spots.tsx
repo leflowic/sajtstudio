@@ -186,7 +186,7 @@ export default function VideoSpots() {
       <SEO
         title="Projekti - Studio LeFlow"
         description="Projekti u kojima je naš tim učestvovao - video spotovi, pesme i muzička produkcija. Profesionalni muzički studio u Beogradu."
-        keywords={["muzička produkcija", "studio leflow", "beograd", "video spotovi", "produkcija pesama", "snimanje muzike", "muzički projekti"]}
+        keywords={["studio leflow", "leflow studio", "leflow", "muzička produkcija", "beograd", "video spotovi", "produkcija pesama", "snimanje muzike", "muzički projekti", "leflow studio projekti"]}
       />
 
       <section className="py-20">

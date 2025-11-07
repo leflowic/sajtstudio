@@ -170,6 +170,8 @@ export default function Team() {
         description="Upoznajte tim Studio LeFlow-a. Aleksa Čomor (LeFlow), Matija Kalajdžić (Kule), Mihailo Vidić (Dicvi), Aleksandar Ćulibrk (Culi). Iskusni producenti, tekstopisci i inženjeri zvuka."
         keywords={[
           "tim studio leflow",
+          "leflow studio tim",
+          "leflow tim",
           "producent muzike beograd",
           "inženjer zvuka beograd",
           "leflow producent",

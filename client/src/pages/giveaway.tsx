@@ -313,11 +313,13 @@ export default function Giveaway() {
         title="Giveaway - Studio LeFlow | Glasaj za Najbolje Pesme"
         description="Učestvuj u mesečnom giveaway-u Studio LeFlow-a! Podeli svoju pesmu, glasaj za omiljene pesme, osvoji nagrade. Besplatno snimanje, miks i mastering za najbolje projekte."
         keywords={[
+          "studio leflow giveaway",
+          "leflow studio giveaway",
+          "leflow giveaway",
           "muzički giveaway beograd",
           "besplatno snimanje pesme",
           "glasanje za pesme",
           "muzički konkurs beograd",
-          "studio leflow giveaway",
           "pobedi snimanje pesme",
           "mesečni muzički konkurs"
         ]}
