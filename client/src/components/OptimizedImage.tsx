@@ -22,7 +22,8 @@ export function OptimizedImage({
     loading: priority ? "eager" : "lazy",
     decoding: priority ? "sync" : "async",
     onLoad: () => setIsLoaded(true),
-    className: `transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`,
+    draggable: false,
+    className: `transition-opacity duration-300 select-none ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`,
     ...props
   };
 

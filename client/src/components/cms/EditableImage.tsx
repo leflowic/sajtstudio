@@ -130,7 +130,9 @@ export function EditableImage({
       <img
         src={previewUrl || fallbackSrc}
         alt={alt}
+        draggable={false}
         className={cn(
+          "select-none",
           className,
           isEditMode && "cursor-pointer hover:opacity-80 transition-opacity"
         )}
