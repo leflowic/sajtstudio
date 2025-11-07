@@ -12,12 +12,10 @@ import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { SEO } from "@/components/SEO";
 import { NewsletterForm } from "@/components/newsletter-form";
 import type { CmsContent } from "@shared/schema";
-import heroImage from "@assets/generated_images/hero-optimized.webp";
-import heroImageFallback from "@assets/generated_images/Warm_Audio_WA-47_microphone_closeup_3054e6fe.png";
-import equipmentImage from "@assets/generated_images/Yamaha_HS8_studio_monitors_d1470a56.png";
 import recordingBoothImage from "@assets/generated_images/Apollo_Twin_X_audio_interface_8905cd94.png";
 import synthImage from "@assets/generated_images/Synthesizer_keyboard_with_controls_c7b4f573.png";
 import videoSetupImage from "@assets/generated_images/Video_camera_production_setup_199f7c64.png";
+import equipmentData from "@/data/equipment-content.json";
 
 export default function Home() {
   const { data: cmsContent = [] } = useQuery<CmsContent[]>({
@@ -139,13 +137,13 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <OptimizedImage 
-            src={heroImage} 
+            src="/equipment/hero-studio-background.jpg" 
             alt="Studio LeFlow - Profesionalni muzički studio"
             priority={true}
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/65 to-black/85" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center">
           <motion.div 
@@ -317,7 +315,7 @@ export default function Home() {
                   page="home"
                   section="equipment"
                   contentKey="equipment_image"
-                  currentImageUrl={getCmsValue("equipment", "equipment_image", equipmentImage)}
+                  currentImageUrl={getCmsValue("equipment", "equipment_image", "/equipment/apollo-twin-duo.jpg")}
                   alt="Studio oprema"
                   className="rounded-xl shadow-2xl w-full"
                 />
@@ -360,6 +358,65 @@ export default function Home() {
                 </Link>
               </div>
             </FadeInWhenVisible>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 lg:py-32 bg-background">
+        <div className="max-w-7xl mx-auto px-6">
+          <FadeInWhenVisible>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+                Studio Oprema
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Najsavremenija oprema za profesionalan zvuk - od vrhunskih mikrofona do industrijskog standarda monitora i UAD processing-a
+              </p>
+            </div>
+          </FadeInWhenVisible>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {equipmentData.equipment.map((item, index) => (
+              <FadeInWhenVisible key={item.id} delay={index * 0.1}>
+                <motion.div
+                  whileHover={{ y: -8 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full"
+                >
+                  <Card className="overflow-hidden h-full flex flex-col group">
+                    <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute top-4 right-4">
+                        <span className="px-3 py-1 bg-primary/90 backdrop-blur-sm text-primary-foreground text-xs font-medium rounded-full">
+                          {item.category}
+                        </span>
+                      </div>
+                    </div>
+                    <CardContent className="p-6 flex-1 flex flex-col">
+                      <h3 className="text-xl font-bold mb-2">{item.name}</h3>
+                      <p className="text-primary font-medium mb-3 text-sm">
+                        {item.headline}
+                      </p>
+                      <p className="text-muted-foreground text-sm mb-4 flex-1">
+                        {item.description}
+                      </p>
+                      <ul className="space-y-2">
+                        {item.features.map((feature, fIndex) => (
+                          <li key={fIndex} className="flex items-start gap-2 text-xs text-muted-foreground">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </FadeInWhenVisible>
+            ))}
           </div>
         </div>
       </section>
