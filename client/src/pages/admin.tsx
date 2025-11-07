@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff } from "lucide-react";
+import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction } from "lucide-react";
 import { format } from "date-fns";
 import type { User, CmsContent, InsertCmsContent } from "@shared/schema";
 
@@ -106,12 +106,13 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full" data-testid="tabs-admin">
-          <TabsList className="grid w-full grid-cols-5 mb-8" data-testid="tabs-list-admin">
+          <TabsList className="grid w-full grid-cols-6 mb-8" data-testid="tabs-list-admin">
             <TabsTrigger value="dashboard" data-testid="tab-dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">Korisnici</TabsTrigger>
             <TabsTrigger value="projects" data-testid="tab-projects">Projekti</TabsTrigger>
             <TabsTrigger value="comments" data-testid="tab-comments">Komentari</TabsTrigger>
             <TabsTrigger value="cms" data-testid="tab-cms">CMS</TabsTrigger>
+            <TabsTrigger value="settings" data-testid="tab-settings">Podešavanja</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -133,8 +134,164 @@ export default function AdminPage() {
           <TabsContent value="cms">
             <CMSTab />
           </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsTab />
+          </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+function SettingsTab() {
+  const { toast } = useToast();
+
+  // Fetch maintenance mode status
+  const { data: maintenanceData, isLoading: maintenanceLoading } = useQuery<{ maintenanceMode: boolean }>({
+    queryKey: ["/api/maintenance"],
+  });
+
+  // Toggle maintenance mode mutation
+  const toggleMaintenanceMutation = useMutation({
+    mutationFn: async (isActive: boolean) => {
+      return await apiRequest("POST", "/api/maintenance", { maintenanceMode: isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance"] });
+      toast({
+        title: "Uspeh",
+        description: "Status sajta je ažuriran",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri ažuriranju statusa sajta",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleToggleMaintenanceMode = (checked: boolean) => {
+    toggleMaintenanceMutation.mutate(checked);
+  };
+
+  return (
+    <div className="grid gap-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Construction className="w-5 h-5 text-primary" />
+            <CardTitle>Aktivnost Sajta</CardTitle>
+          </div>
+          <CardDescription>
+            Kontrolišite dostupnost sajta za korisnike
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="maintenance-mode" className="text-base">
+                Maintenance Mode
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Kada je aktivno, samo administratori mogu pristupiti sajtu. Ostali korisnici će videti poruku da je sajt u pripremi.
+              </p>
+            </div>
+            <Switch
+              id="maintenance-mode"
+              checked={maintenanceData?.maintenanceMode || false}
+              onCheckedChange={handleToggleMaintenanceMode}
+              disabled={maintenanceLoading || toggleMaintenanceMutation.isPending}
+            />
+          </div>
+
+          {maintenanceData?.maintenanceMode && (
+            <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950 p-4">
+              <div className="flex items-start gap-3">
+                <Construction className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-orange-900 dark:text-orange-100">
+                    Sajt je trenutno u Maintenance Modu
+                  </h4>
+                  <p className="text-sm text-orange-800 dark:text-orange-200 mt-1">
+                    Samo administratori mogu pristupiti sajtu. Ostali korisnici vide stranicu "Sajt je u pripremi".
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Settings className="w-5 h-5 text-primary" />
+            <CardTitle>Giveaway Podešavanja</CardTitle>
+          </div>
+          <CardDescription>
+            Kontrolišite aktivnost mesečnog giveaway sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <GiveawaySettingsSection />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function GiveawaySettingsSection() {
+  const { toast } = useToast();
+
+  // Fetch giveaway settings
+  const { data: giveawaySettings, isLoading: settingsLoading } = useQuery<{ isActive: boolean }>({
+    queryKey: ["/api/giveaway/settings"],
+  });
+
+  // Toggle giveaway mutation
+  const toggleGiveawayMutation = useMutation({
+    mutationFn: async (isActive: boolean) => {
+      await apiRequest("POST", "/api/admin/giveaway/toggle", { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/giveaway/settings"] });
+      toast({
+        title: "Uspeh",
+        description: "Giveaway status je ažuriran",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri ažuriranju giveaway statusa",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleToggleGiveaway = (checked: boolean) => {
+    toggleGiveawayMutation.mutate(checked);
+  };
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="space-y-0.5">
+        <Label htmlFor="giveaway-active" className="text-base">
+          Aktiviraj Giveaway
+        </Label>
+        <p className="text-sm text-muted-foreground">
+          Omogućite korisnicima da uploaduju projekte i učestvuju u glasanju
+        </p>
+      </div>
+      <Switch
+        id="giveaway-active"
+        checked={giveawaySettings?.isActive || false}
+        onCheckedChange={handleToggleGiveaway}
+        disabled={settingsLoading || toggleGiveawayMutation.isPending}
+      />
     </div>
   );
 }

@@ -23,6 +23,9 @@ import TermsOfUse from "@/pages/terms-of-use";
 import Settings from "@/pages/settings";
 import VideoSpots from "@/pages/video-spots";
 import NotFound from "@/pages/not-found";
+import MaintenancePage from "@/pages/maintenance";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -44,8 +47,23 @@ const pageTransition = {
 function Router() {
   const [location] = useLocation();
   const shouldReduceMotion = useReducedMotion();
+  const { user } = useAuth();
   
   useScrollToTop();
+
+  // Check if maintenance mode is active
+  const { data: maintenanceData } = useQuery<{ maintenanceMode: boolean }>({
+    queryKey: ["/api/maintenance"],
+    retry: false,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  // If maintenance mode is active and user is not admin, show maintenance page
+  const isMaintenanceMode = maintenanceData?.maintenanceMode && user?.role !== "admin";
+  
+  if (isMaintenanceMode) {
+    return <MaintenancePage />;
+  }
   
   return (
     <>
