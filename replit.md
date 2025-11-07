@@ -22,7 +22,7 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
 - **Portfolio (Projekti Page)**: Showcase studio work with YouTube embeds, managed by admins.
 - **Contact Form**: Direct email notifications.
 - **File Uploads**: MP3 files for projects, images for CMS.
-- **Admin Panel**: Comprehensive management for users, project approvals, portfolio, CMS editing, newsletter subscribers, and maintenance mode.
+- **Admin Panel**: Comprehensive management for users, project approvals with audio preview, portfolio, CMS editing, newsletter subscribers, and maintenance mode.
 - **Newsletter System**: Double opt-in email confirmation with admin management and statistics.
 - **Password Management**: Secure forgot/reset password flows with email verification codes.
 - **Maintenance Mode**: Site-wide control for administrators, allowing admin access while the public sees a maintenance page.
@@ -77,3 +77,4 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
 - **Newsletter Subscription System**: Complete newsletter system with double opt-in email confirmation, 5 backend endpoints, admin statistics/export functionality
 - **2FA Admin Login During Maintenance**: Two-Factor Authentication for admin login during maintenance mode with 6-digit email codes
 - **Maintenance Mode**: Site-wide maintenance control system for administrators
+- **Admin Audio Preview for Giveaway Projects**: Integrated HTML5 audio player in pending project cards allowing admins to listen to user-submitted songs before approval, preventing spam/troll submissions with full playback controls (play/pause/seek/volume)
