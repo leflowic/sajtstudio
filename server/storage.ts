@@ -97,6 +97,7 @@ export interface IStorage {
   getNewsletterSubscriberByToken(token: string): Promise<NewsletterSubscriber | undefined>;
   confirmNewsletterSubscription(token: string): Promise<boolean>;
   unsubscribeNewsletter(email: string): Promise<boolean>;
+  deleteNewsletterSubscriber(id: number): Promise<boolean>;
   getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]>;
   getConfirmedNewsletterSubscribers(): Promise<NewsletterSubscriber[]>;
   getNewsletterStats(): Promise<{ total: number; confirmed: number; pending: number }>;
@@ -638,7 +639,7 @@ export class DatabaseStorage implements IStorage {
         status: 'pending',
       })
       .returning();
-    return subscriber;
+    return subscriber!;
   }
 
   async getNewsletterSubscriberByEmail(email: string): Promise<NewsletterSubscriber | undefined> {
@@ -690,6 +691,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(newsletterSubscribers.id, subscriber.id));
 
     return true;
+  }
+
+  async deleteNewsletterSubscriber(id: number): Promise<boolean> {
+    const result = await db.delete(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.id, id))
+      .returning();
+    
+    return result.length > 0;
   }
 
   async getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {

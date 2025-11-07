@@ -741,6 +741,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete newsletter subscriber (admin only)
+  app.delete("/api/newsletter/subscribers/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Nevažeći ID" });
+      }
+
+      const success = await storage.deleteNewsletterSubscriber(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Pretplatnik nije pronađen" });
+      }
+
+      res.json({ message: "Pretplatnik je uspešno uklonjen" });
+    } catch (error) {
+      console.error("Delete newsletter subscriber error:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // Send newsletter campaign (admin only)
+  app.post("/api/newsletter/send", requireAdmin, async (req, res) => {
+    try {
+      const { subject, htmlContent } = req.body;
+
+      if (!subject || !htmlContent) {
+        return res.status(400).json({ error: "Subject i sadržaj su obavezni" });
+      }
+
+      // Get all confirmed subscribers
+      const subscribers = await storage.getConfirmedNewsletterSubscribers();
+
+      if (subscribers.length === 0) {
+        return res.status(400).json({ error: "Nema potvrđenih pretplatnika" });
+      }
+
+      // Send email to all confirmed subscribers
+      const emailPromises = subscribers.map(subscriber => 
+        sendEmail({
+          to: subscriber.email,
+          subject: subject,
+          html: htmlContent,
+        })
+      );
+
+      await Promise.all(emailPromises);
+
+      res.json({ 
+        message: `Newsletter uspešno poslat na ${subscribers.length} email adresa`,
+        count: subscribers.length 
+      });
+    } catch (error) {
+      console.error("Send newsletter error:", error);
+      res.status(500).json({ error: "Greška pri slanju newslettera" });
+    }
+  });
+
   // ==================== GIVEAWAY API ROUTES ====================
   
   // Accept terms of service

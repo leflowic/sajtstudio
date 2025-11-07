@@ -25,9 +25,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction } from "lucide-react";
+import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction, Send, Mail } from "lucide-react";
 import { format } from "date-fns";
 import type { User, CmsContent, InsertCmsContent } from "@shared/schema";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 interface AdminStats {
   totalUsers: number;
@@ -251,6 +252,9 @@ function SettingsTab() {
 function NewsletterTab() {
   const { toast } = useToast();
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [subject, setSubject] = useState("");
+  const [htmlContent, setHtmlContent] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const { data: subscribers = [], isLoading: subscribersLoading } = useQuery({
     queryKey: ["/api/newsletter/subscribers"],
@@ -269,6 +273,72 @@ function NewsletterTab() {
       return await response.json();
     },
   });
+
+  const deleteSubscriberMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/newsletter/subscribers/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete subscriber");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/newsletter/subscribers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/newsletter/stats"] });
+      toast({
+        title: "Uspeh",
+        description: "Pretplatnik je uspešno uklonjen",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri brisanju pretplatnika",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSendNewsletter = async () => {
+    if (!subject.trim() || !htmlContent.trim()) {
+      toast({
+        title: "Greška",
+        description: "Subject i sadržaj su obavezni",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const response = await fetch("/api/newsletter/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, htmlContent }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to send newsletter");
+      }
+
+      const result = await response.json();
+      toast({
+        title: "Uspeh",
+        description: result.message,
+      });
+      setSubject("");
+      setHtmlContent("");
+    } catch (error: any) {
+      toast({
+        title: "Greška",
+        description: error.message || "Došlo je do greške pri slanju newslettera",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleCopyEmail = (email: string) => {
     navigator.clipboard.writeText(email);
@@ -361,6 +431,53 @@ function NewsletterTab() {
 
       <Card>
         <CardHeader>
+          <div className="flex items-center gap-2">
+            <Mail className="w-5 h-5 text-primary" />
+            <div>
+              <CardTitle>Pošalji Newsletter</CardTitle>
+              <CardDescription>Kreirajte i pošaljite email kampanju svim potvrđenim pretplatnicima</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="newsletter-subject">Subject</Label>
+            <Input
+              id="newsletter-subject"
+              placeholder="Naslov newsletter poruke..."
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <div>
+            <Label htmlFor="newsletter-content">Sadržaj</Label>
+            <div className="mt-2">
+              <RichTextEditor
+                content={htmlContent}
+                onChange={setHtmlContent}
+                placeholder="Unesite sadržaj newsletter poruke..."
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-4">
+            <p className="text-sm text-muted-foreground">
+              Newsletter će biti poslat na {stats?.confirmed || 0} potvrđenih email adresa
+            </p>
+            <Button 
+              onClick={handleSendNewsletter} 
+              disabled={isSending || !subject.trim() || !htmlContent.trim()}
+              className="gap-2"
+            >
+              <Send className="w-4 h-4" />
+              {isSending ? "Slanje..." : "Pošalji Newsletter"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Pretplatnici</CardTitle>
@@ -402,13 +519,44 @@ function NewsletterTab() {
                       <TableCell>{formatDate(subscriber.subscribedAt)}</TableCell>
                       <TableCell>{formatDate(subscriber.confirmedAt)}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyEmail(subscriber.email)}
-                        >
-                          {copiedEmail === subscriber.email ? "Kopirano!" : "Kopiraj"}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCopyEmail(subscriber.email)}
+                          >
+                            {copiedEmail === subscriber.email ? "Kopirano!" : "Kopiraj"}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Ukloni pretplatnika</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Da li ste sigurni da želite da uklonite <strong>{subscriber.email}</strong> sa newsletter liste?
+                                  Ova akcija se ne može poništiti.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Otkaži</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteSubscriberMutation.mutate(subscriber.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Ukloni
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
