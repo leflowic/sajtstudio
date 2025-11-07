@@ -161,6 +161,8 @@ async function checkMaintenanceMode(req: any, res: any, next: any) {
     '/forgot-password',
     '/reset-password',
     '/admin',
+    '/admin-login-request',
+    '/admin-login-verify',
   ];
   
   // Check if the request is for an allowed path
@@ -375,6 +377,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Greška pri slanju emaila" });
       }
     } catch (error) {
+      return res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // Admin login request - sends verification code to admin email (2FA)
+  app.post("/api/admin-login-request", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Korisničko ime i lozinka su obavezni" });
+      }
+      
+      // Get user by username (case-insensitive)
+      const user = await storage.getUserByUsername(username);
+      
+      // Generic error message to prevent user enumeration
+      if (!user) {
+        console.log(`[Admin Login] Failed: User not found (${username})`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Verify password
+      const validPassword = await comparePasswords(password, user.password);
+      if (!validPassword) {
+        console.log(`[Admin Login] Failed: Invalid password for user ${user.username}`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Check if user is admin - return same generic error
+      if (user.role !== 'admin') {
+        console.log(`[Admin Login] Failed: User ${user.username} is not admin (role: ${user.role})`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Check if user is banned - return same generic error
+      if (user.banned) {
+        console.log(`[Admin Login] Failed: User ${user.username} is banned`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Generate 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await storage.setAdminLoginToken(user.id, verificationCode);
+      
+      // Send verification email
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: 'Verifikacioni Kod Za Admin Prijavu - Studio LeFlow',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #7c3aed;">Studio LeFlow - Admin Prijava</h2>
+              <h3>Verifikacioni Kod</h3>
+              <p>Pokušaj prijave na admin panel. Ako ovo niste Vi, ignorišite ovaj email.</p>
+              <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 30px 0; border-radius: 8px;">
+                <h1 style="color: #7c3aed; font-size: 36px; letter-spacing: 8px; margin: 0;">${verificationCode}</h1>
+              </div>
+              <p>Ovaj kod ističe za 15 minuta.</p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+              <p style="color: #666; font-size: 12px;">Studio LeFlow - Profesionalna Muzička Produkcija</p>
+            </div>
+          `
+        });
+        
+        return res.json({ 
+          success: true, 
+          message: "Verifikacioni kod je poslat na Vaš email",
+          userId: user.id 
+        });
+      } catch (emailError) {
+        console.error("Greška pri slanju emaila:", emailError);
+        return res.status(500).json({ error: "Greška pri slanju emaila" });
+      }
+    } catch (error) {
+      console.error("Admin login request error:", error);
+      return res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // Admin login verify - verifies code and logs in user
+  app.post("/api/admin-login-verify", async (req, res) => {
+    try {
+      const { userId, code } = req.body;
+      
+      if (!userId || !code) {
+        return res.status(400).json({ error: "Svi podaci su obavezni" });
+      }
+      
+      // Verify code
+      const isValid = await storage.verifyAdminLoginToken(userId, code);
+      
+      if (!isValid) {
+        return res.status(401).json({ error: "Neispravan ili istekao kod" });
+      }
+      
+      // Get user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      // Final security checks
+      if (user.role !== 'admin') {
+        return res.status(403).json({ error: "Nemate admin privilegije" });
+      }
+      
+      if (user.banned) {
+        return res.status(403).json({ error: "Vaš nalog je banovan" });
+      }
+      
+      // Clear the admin login token
+      await storage.clearAdminLoginToken(userId);
+      
+      // Log user in by setting session
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error:", err);
+          return res.status(500).json({ error: "Greška pri prijavljivanju" });
+        }
+        
+        const { password, verificationCode, adminLoginToken, ...userWithoutSensitiveData } = user;
+        res.json({ success: true, user: userWithoutSensitiveData });
+      });
+    } catch (error) {
+      console.error("Admin login verify error:", error);
       return res.status(500).json({ error: "Greška na serveru" });
     }
   });

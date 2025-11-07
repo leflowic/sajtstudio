@@ -56,6 +56,9 @@ export interface IStorage {
   verifyPasswordResetToken(userId: number, token: string): Promise<boolean>;
   updatePassword(userId: number, newPassword: string): Promise<void>;
   clearPasswordResetToken(userId: number): Promise<void>;
+  setAdminLoginToken(userId: number, token: string): Promise<void>;
+  verifyAdminLoginToken(userId: number, token: string): Promise<boolean>;
+  clearAdminLoginToken(userId: number): Promise<void>;
 
   // Projects
   createProject(data: { title: string; description: string; genre: string; mp3Url: string; userId: number; currentMonth: string }): Promise<Project>;
@@ -239,6 +242,35 @@ export class DatabaseStorage implements IStorage {
     await db.update(users).set({ 
       passwordResetToken: null, 
       passwordResetExpiry: null 
+    }).where(eq(users.id, userId));
+  }
+
+  async setAdminLoginToken(userId: number, token: string): Promise<void> {
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await db.update(users).set({ 
+      adminLoginToken: token,
+      adminLoginExpiry: expiry
+    }).where(eq(users.id, userId));
+  }
+
+  async verifyAdminLoginToken(userId: number, token: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    
+    if (!user || user.adminLoginToken !== token) {
+      return false;
+    }
+    
+    if (!user.adminLoginExpiry || user.adminLoginExpiry < new Date()) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  async clearAdminLoginToken(userId: number): Promise<void> {
+    await db.update(users).set({ 
+      adminLoginToken: null, 
+      adminLoginExpiry: null 
     }).where(eq(users.id, userId));
   }
 
