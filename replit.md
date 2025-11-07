@@ -48,7 +48,10 @@ The website features a modern design utilizing Tailwind CSS and shadcn/ui compon
 - **Instagram**: @studioleflow
 - **Location**: Beograd, Srbija
 
-## Recent Updates (2025-11-06)
+## Recent Updates (2025-11-07)
+- **Maintenance Mode Logo Fix**: Copied logo file from client assets to `attached_assets/logo/studioleflow-transparent.png` to ensure logo displays correctly on maintenance page
+
+## Previous Updates (2025-11-06)
 - **Email System**: Migrated to production Resend with verified domain, development fallback implemented
 - **Page Transitions**: Enhanced with smooth scale + fade animations (0.4s duration, professional easing curve)
 - **Code Quality**: Removed bcryptjs dependency, using Node.js scrypt for password hashing
