@@ -49,6 +49,23 @@ The website features a modern design utilizing Tailwind CSS and shadcn/ui compon
 - **Location**: Beograd, Srbija
 
 ## Recent Updates (2025-11-07)
+- **Newsletter Subscription System**: Complete newsletter system with double opt-in email confirmation:
+  - Database: `newsletter_subscribers` table with fields: id, email, status (pending/confirmed/unsubscribed), confirmationToken, confirmedAt, subscribedAt, unsubscribedAt
+  - Backend API: Five new endpoints:
+    * POST `/api/newsletter/subscribe` - validates email, generates 32-char hex token, sends confirmation email (public)
+    * GET `/api/newsletter/confirm/:token` - confirms email subscription via token link (public)
+    * POST `/api/newsletter/unsubscribe` - unsubscribes email from newsletter (public)
+    * GET `/api/newsletter/subscribers` - fetches all subscribers with status (admin only)
+    * GET `/api/newsletter/stats` - returns total, confirmed, and pending counts (admin only)
+  - Storage functions: createNewsletterSubscriber, getNewsletterSubscriberByEmail, getNewsletterSubscriberByToken, confirmNewsletterSubscription, unsubscribeNewsletter, getAllNewsletterSubscribers, getConfirmedNewsletterSubscribers, getNewsletterStats
+  - Frontend components:
+    * NewsletterForm component with two variants (default for homepage, footer for footer section)
+    * Newsletter confirmation page (`/newsletter/potvrda/:token`) with success/error states
+    * Homepage newsletter CTA section with gradient background and professional design
+    * Footer newsletter column (4-column grid layout on large screens)
+  - Admin panel: New "Newsletter" tab (7th tab) with statistics cards (total, confirmed, pending), subscriber list table with status badges, dates, individual email copy, and "Copy all confirmed emails" export button
+  - Email integration: Branded confirmation emails via Resend with Studio LeFlow branding (#4542f5 accent color)
+  - Security: Case-insensitive email lookups, duplicate email prevention, re-subscription support for previously unsubscribed users
 - **2FA Admin Login During Maintenance**: Implemented Two-Factor Authentication for admin login during maintenance mode:
   - Database: Added `adminLoginToken` and `adminLoginExpiry` fields to users table (15-minute expiration)
   - Backend API: Two new endpoints:
