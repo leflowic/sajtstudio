@@ -915,6 +915,23 @@ function ProjectsTab() {
                       <span className="text-sm text-right line-clamp-2">{project.description}</span>
                     </div>
                   </div>
+                  
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Music className="h-4 w-4" />
+                      <span>Preslušaj pesmu:</span>
+                    </div>
+                    <audio
+                      controls
+                      className="w-full"
+                      preload="metadata"
+                      data-testid={`audio-player-${project.id}`}
+                    >
+                      <source src={project.mp3Url} type="audio/mpeg" />
+                      Vaš browser ne podržava audio player.
+                    </audio>
+                  </div>
+
                   <div className="space-y-2">
                     <Button
                       variant="default"
