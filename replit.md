@@ -49,6 +49,7 @@ The website features a modern design utilizing Tailwind CSS and shadcn/ui compon
 - **Location**: Beograd, Srbija
 
 ## Recent Updates (2025-11-07)
+- **Maintenance Mode Admin Login Fix**: Fixed critical bug where admins couldn't login during maintenance mode - removed `/api` prefix from allowedPaths since middleware is mounted on `/api` (Express strips the prefix from `req.path`)
 - **Maintenance Mode Logo Fix**: Copied logo file from client assets to `attached_assets/logo/studioleflow-transparent.png` to ensure logo displays correctly on maintenance page
 
 ## Previous Updates (2025-11-06)
