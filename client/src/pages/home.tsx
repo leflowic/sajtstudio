@@ -156,7 +156,7 @@ export default function Home() {
             className="w-full h-full object-cover scale-105 [filter:blur(6px)]"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/65" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/50" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center">
           <motion.div 
@@ -408,61 +408,89 @@ export default function Home() {
             </div>
           </FadeInWhenVisible>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <FadeInWhenVisible delay={0.1}>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Headphones className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Universal Audio Apollo Twin X Duo</h3>
+              <Card className="overflow-hidden hover-elevate transition-all duration-300">
+                <CardContent className="p-0">
+                  <OptimizedImage
+                    src="/equipment/apollo-twin-duo.jpg"
+                    alt="Universal Audio Apollo Twin X Duo"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                      <Headphones className="w-5 h-5 text-primary" />
+                      Universal Audio Apollo Twin X Duo
+                    </h3>
                     <p className="text-muted-foreground">
                       Profesionalni Thunderbolt audio interface sa Realtime UAD processing-om. Kristalno čist konvertor i ultra niska latencija za precizno snimanje i monitoring.
                     </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </FadeInWhenVisible>
 
             <FadeInWhenVisible delay={0.2}>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Headphones className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Beyerdynamic DT 990 PRO & DT 770 PRO</h3>
+              <Card className="overflow-hidden hover-elevate transition-all duration-300">
+                <CardContent className="p-0">
+                  <OptimizedImage
+                    src="/equipment/dt990-headphones.jpg"
+                    alt="Beyerdynamic DT 990 PRO"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                      <Headphones className="w-5 h-5 text-primary" />
+                      Beyerdynamic DT 990 PRO & DT 770 PRO
+                    </h3>
                     <p className="text-muted-foreground">
                       Studio referentne slušalice za precizno miksovanje i mastering. DT 990 PRO (otvorene) za analitičko slušanje, DT 770 PRO (zatvorene) za snimanje bez curenja zvuka.
                     </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </FadeInWhenVisible>
 
             <FadeInWhenVisible delay={0.3}>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">UAD Plugin Suite - Sve Originalne Licence</h3>
+              <Card className="overflow-hidden hover-elevate transition-all duration-300">
+                <CardContent className="p-0">
+                  <OptimizedImage
+                    src="/equipment/uad-plugins.jpg"
+                    alt="UAD Plugin Collection"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                      UAD Plugin Suite - Sve Originalne Licence
+                    </h3>
                     <p className="text-muted-foreground">
                       Kompletna kolekcija originalnih Universal Audio pluginova: Neve 1073, Pultec EQ, 1176 Compressor, LA-2A, Avalon 737 i mnogi drugi. Legendarni analog zvuk u digitalnom domenu.
                     </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </FadeInWhenVisible>
 
             <FadeInWhenVisible delay={0.4}>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">AutoTune RealTime Advanced - Bez Kasnjenja</h3>
+              <Card className="overflow-hidden hover-elevate transition-all duration-300">
+                <CardContent className="p-0">
+                  <OptimizedImage
+                    src="/equipment/autotune-uad.jpg"
+                    alt="AutoTune RealTime Advanced"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                      AutoTune RealTime Advanced - Bez Kasnjenja
+                    </h3>
                     <p className="text-muted-foreground">
                       Realtime Auto-Tune processing sa ultra niskom latencijom - performeri mogu da snimaju sa live pitch correction efektom bez čujnog kasnjenja. Profesionalni zvuk tokom snimanja.
                     </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </FadeInWhenVisible>
           </div>
         </div>
