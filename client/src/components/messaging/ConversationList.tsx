@@ -49,15 +49,21 @@ export default function ConversationList({ selectedUserId, onSelectConversation 
   const { user } = useAuth();
   const { subscribe } = useWebSocketContext();
 
-  const { data: conversations, isLoading, refetch } = useQuery<ConversationData[]>({
+  const { data: conversations, isLoading, refetch, error } = useQuery<ConversationData[]>({
     queryKey: ["/api/conversations"],
     queryFn: async () => {
+      console.log('[ConversationList] Fetching conversations...');
       const res = await fetch("/api/conversations", { cache: "no-store" });
+      console.log('[ConversationList] Response status:', res.status);
       if (!res.ok) throw new Error("Failed to fetch conversations");
-      return res.json();
+      const data = await res.json();
+      console.log('[ConversationList] Data received:', data);
+      return data;
     },
     refetchInterval: 30000,
   });
+
+  console.log('[ConversationList] Render - conversations:', conversations, 'isLoading:', isLoading, 'error:', error);
 
   useEffect(() => {
     const unsubscribe = subscribe((message) => {
