@@ -79,24 +79,7 @@ export default function ChatInterface({ selectedUserId, onBack }: ChatInterfaceP
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages/conversation", selectedUserId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
       setMessageText("");
-    },
-  });
-
-  const markAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/messages/mark-read", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otherUserId: selectedUserId }),
-      });
-      if (!res.ok) throw new Error("Failed to mark as read");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages/conversation", selectedUserId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
     },
   });
 
@@ -109,33 +92,9 @@ export default function ChatInterface({ selectedUserId, onBack }: ChatInterfaceP
   }, [messages, scrollToBottom]);
 
   useEffect(() => {
-    if (!messages || messages.length === 0 || !user?.id || markAsReadMutation.isPending) return;
-
-    const currentUnreadMessageIds = messages
-      .filter(msg => !msg.isRead && msg.receiverId === user.id)
-      .map(msg => msg.id);
-    
-    if (currentUnreadMessageIds.length === 0) {
-      lastUnreadMessagesRef.current = new Set();
-      return;
-    }
-
-    const hasNewUnreadMessages = currentUnreadMessageIds.some(
-      id => !lastUnreadMessagesRef.current.has(id)
-    );
-
-    if (hasNewUnreadMessages) {
-      const newUnreadSet = new Set(currentUnreadMessageIds);
-      lastUnreadMessagesRef.current = newUnreadSet;
-      markAsReadMutation.mutate();
-    }
-  }, [messages, user?.id, markAsReadMutation.mutate, markAsReadMutation.isPending]);
-
-  useEffect(() => {
     const unsubscribe = subscribe((message) => {
       if (message.type === "new_message") {
         queryClient.invalidateQueries({ queryKey: ["/api/messages/conversation", selectedUserId] });
-        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
         scrollToBottom();
       }
       
@@ -145,10 +104,6 @@ export default function ChatInterface({ selectedUserId, onBack }: ChatInterfaceP
       
       if (message.type === "typing_stop" && message.userId === selectedUserId) {
         setOtherUserTyping(false);
-      }
-      
-      if (message.type === "message_read") {
-        queryClient.invalidateQueries({ queryKey: ["/api/messages/conversation", selectedUserId] });
       }
     });
 

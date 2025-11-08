@@ -881,6 +881,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return updated user (sanitized)
       const updatedUser = await storage.getUser(userId);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
       res.json(sanitizeUser(updatedUser));
     } catch (error: any) {
       console.error("Update profile error:", error);
@@ -945,6 +948,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return updated user (sanitized)
       const updatedUser = await storage.getUser(userId);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
       res.json(sanitizeUser(updatedUser));
     } catch (error: any) {
       console.error("Update avatar error:", error);
@@ -966,6 +972,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return updated user (sanitized)
       const updatedUser = await storage.getUser(userId);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
       res.json(sanitizeUser(updatedUser));
     } catch (error: any) {
       console.error("Remove avatar error:", error);
@@ -1591,6 +1600,29 @@ Sitemap: ${siteUrl}/sitemap.xml
 
   // ===== MESSAGING ENDPOINTS =====
   
+  // Get user by ID (verified users only)
+  app.get("/api/users/:id", requireVerifiedEmail, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Nevažeći ID korisnika" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      const sanitized = sanitizeUser(user);
+      res.json(sanitized);
+    } catch (error: any) {
+      console.error("[MESSAGING] Get user error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju korisnika" });
+    }
+  });
+  
   // Search users (verified users only)
   app.get("/api/users/search", requireVerifiedEmail, async (req, res) => {
     try {
@@ -1635,6 +1667,9 @@ Sitemap: ${siteUrl}/sitemap.xml
       }
       
       const messages = await storage.getConversationMessages(conversation.id, req.user!.id);
+      
+      await storage.markMessagesAsRead(conversation.id, req.user!.id);
+      
       res.json(messages);
     } catch (error: any) {
       console.error("[MESSAGING] Get messages error:", error);
@@ -1687,39 +1722,15 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
-  // Mark messages as read
+  // DEPRECATED - Messages are now auto-marked as read when fetched (GET /api/messages/conversation/:userId)
+  // This endpoint is kept for backward compatibility with cached JavaScript
   app.put("/api/messages/mark-read", requireVerifiedEmail, async (req, res) => {
-    try {
-      const { otherUserId } = req.body;
-      
-      if (!otherUserId || typeof otherUserId !== 'number') {
-        return res.status(400).json({ error: "otherUserId je obavezan" });
-      }
-      
-      // Get or create conversation
-      const conversation = await storage.getConversation(req.user!.id, otherUserId);
-      
-      if (!conversation) {
-        return res.json({ success: true });
-      }
-      
-      // Mark messages as read
-      await storage.markMessagesAsRead(conversation.id, req.user!.id);
-      
-      // Broadcast read receipt to other user via WebSocket
-      if (wsHelpers.broadcastToUser) {
-        wsHelpers.broadcastToUser(otherUserId, {
-          type: 'message_read',
-          conversationId: conversation.id,
-          readBy: req.user!.id,
-        });
-      }
-      
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error("[MESSAGING] Mark as read error:", error);
-      res.status(500).json({ error: "Greška pri označavanju poruka" });
-    }
+    console.warn("[DEPRECATED] PUT /api/messages/mark-read called - browser cache issue! User needs hard refresh (Ctrl+F5)");
+    res.json({ 
+      success: true,
+      deprecated: true,
+      message: "Please perform a hard refresh of your browser (Ctrl+F5 or Ctrl+Shift+R)" 
+    });
   });
 
   // Get unread message count
