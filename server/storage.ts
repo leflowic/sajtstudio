@@ -18,6 +18,10 @@ import {
   type InsertVideoSpot,
   type NewsletterSubscriber,
   type InsertNewsletterSubscriber,
+  type Conversation,
+  type Message,
+  type MessageRead,
+  type AdminMessageAudit,
   contactSubmissions,
   users,
   projects,
@@ -28,6 +32,10 @@ import {
   cmsMedia,
   videoSpots,
   newsletterSubscribers,
+  conversations,
+  messages,
+  messageReads,
+  adminMessageAudit,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -121,6 +129,22 @@ export interface IStorage {
   updateVideoSpot(id: number, data: InsertVideoSpot): Promise<VideoSpot>;
   deleteVideoSpot(id: number): Promise<void>;
   updateVideoSpotOrder(id: number, order: number): Promise<VideoSpot>;
+
+  // Messaging
+  searchUsers(query: string, currentUserId: number): Promise<Array<{ id: number; username: string; email: string }>>;
+  getOrCreateConversation(user1Id: number, user2Id: number): Promise<Conversation>;
+  getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined>;
+  getUserConversations(userId: number): Promise<Array<Conversation & { otherUser: { id: number; username: string }; lastMessage?: Message; unreadCount: number }>>;
+  sendMessage(senderId: number, receiverId: number, content: string, imageUrl?: string): Promise<Message>;
+  getConversationMessages(conversationId: number, userId: number): Promise<Message[]>;
+  markMessagesAsRead(conversationId: number, userId: number): Promise<void>;
+  getUnreadMessageCount(userId: number): Promise<number>;
+  deleteMessage(messageId: number, userId: number): Promise<boolean>;
+  adminGetAllConversations(): Promise<Array<{ user1: { id: number; username: string }; user2: { id: number; username: string }; messageCount: number; lastMessageAt: Date | null }>>;
+  adminGetConversationMessages(user1Id: number, user2Id: number): Promise<Message[]>;
+  adminDeleteMessage(messageId: number): Promise<boolean>;
+  adminLogConversationView(adminId: number, viewedUser1Id: number, viewedUser2Id: number): Promise<void>;
+  adminGetAuditLogs(): Promise<Array<AdminMessageAudit & { adminUsername: string; user1Username: string; user2Username: string }>>;
 
   // Session store
   sessionStore: Store;
@@ -792,6 +816,312 @@ export class DatabaseStorage implements IStorage {
     
     const newRole = user.role === 'admin' ? 'user' : 'admin';
     await db.update(users).set({ role: newRole }).where(eq(users.id, userId));
+  }
+
+  // Messaging methods
+  async searchUsers(query: string, currentUserId: number): Promise<Array<{ id: number; username: string; email: string }>> {
+    const results = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+      })
+      .from(users)
+      .where(
+        and(
+          sql`LOWER(${users.username}) LIKE LOWER(${`%${query}%`})`,
+          sql`${users.id} != ${currentUserId}`,
+          eq(users.banned, false),
+          eq(users.emailVerified, true)
+        )
+      )
+      .limit(10);
+    return results;
+  }
+
+  async getOrCreateConversation(user1Id: number, user2Id: number): Promise<Conversation> {
+    const existing = await this.getConversation(user1Id, user2Id);
+    if (existing) return existing;
+
+    const [canonicalUser1, canonicalUser2] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
+    
+    const [conversation] = await db
+      .insert(conversations)
+      .values({ user1Id: canonicalUser1, user2Id: canonicalUser2 })
+      .returning();
+    return conversation!;
+  }
+
+  async getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined> {
+    const [canonicalUser1, canonicalUser2] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
+    
+    const [conversation] = await db
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.user1Id, canonicalUser1),
+          eq(conversations.user2Id, canonicalUser2)
+        )
+      );
+    return conversation || undefined;
+  }
+
+  async getUserConversations(userId: number): Promise<Array<Conversation & { otherUser: { id: number; username: string }; lastMessage?: Message; unreadCount: number }>> {
+    const userConvos = await db
+      .select()
+      .from(conversations)
+      .where(
+        sql`${conversations.user1Id} = ${userId} OR ${conversations.user2Id} = ${userId}`
+      )
+      .orderBy(desc(conversations.lastMessageAt));
+
+    const results = await Promise.all(
+      userConvos.map(async (convo) => {
+        const otherUserId = convo.user1Id === userId ? convo.user2Id : convo.user1Id;
+        const [otherUser] = await db
+          .select({ id: users.id, username: users.username })
+          .from(users)
+          .where(eq(users.id, otherUserId));
+
+        const [lastMsg] = await db
+          .select()
+          .from(messages)
+          .where(eq(messages.conversationId, convo.id))
+          .orderBy(desc(messages.createdAt))
+          .limit(1);
+
+        const unreadMsgs = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(messages)
+          .leftJoin(
+            messageReads,
+            and(
+              eq(messageReads.messageId, messages.id),
+              eq(messageReads.userId, userId)
+            )
+          )
+          .where(
+            and(
+              eq(messages.conversationId, convo.id),
+              sql`${messages.receiverId} = ${userId}`,
+              sql`${messageReads.id} IS NULL`
+            )
+          );
+
+        return {
+          ...convo,
+          otherUser: otherUser!,
+          lastMessage: lastMsg || undefined,
+          unreadCount: Number(unreadMsgs[0]?.count ?? 0),
+        };
+      })
+    );
+
+    return results;
+  }
+
+  async sendMessage(senderId: number, receiverId: number, content: string, imageUrl?: string): Promise<Message> {
+    const conversation = await this.getOrCreateConversation(senderId, receiverId);
+
+    const [message] = await db
+      .insert(messages)
+      .values({
+        conversationId: conversation.id,
+        senderId,
+        receiverId,
+        content,
+        imageUrl,
+      })
+      .returning();
+
+    await db
+      .update(conversations)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(conversations.id, conversation.id));
+
+    return message!;
+  }
+
+  async getConversationMessages(conversationId: number, userId: number): Promise<Message[]> {
+    const msgs = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId))
+      .orderBy(messages.createdAt);
+
+    return msgs;
+  }
+
+  async markMessagesAsRead(conversationId: number, userId: number): Promise<void> {
+    const unreadMessages = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .leftJoin(
+        messageReads,
+        and(
+          eq(messageReads.messageId, messages.id),
+          eq(messageReads.userId, userId)
+        )
+      )
+      .where(
+        and(
+          eq(messages.conversationId, conversationId),
+          eq(messages.receiverId, userId),
+          sql`${messageReads.id} IS NULL`
+        )
+      );
+
+    for (const msg of unreadMessages) {
+      await db.insert(messageReads).values({
+        messageId: msg.id,
+        userId,
+      });
+    }
+  }
+
+  async getUnreadMessageCount(userId: number): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .leftJoin(
+        messageReads,
+        and(
+          eq(messageReads.messageId, messages.id),
+          eq(messageReads.userId, userId)
+        )
+      )
+      .where(
+        and(
+          eq(messages.receiverId, userId),
+          sql`${messageReads.id} IS NULL`
+        )
+      );
+
+    return Number(result?.count ?? 0);
+  }
+
+  async deleteMessage(messageId: number, userId: number): Promise<boolean> {
+    const [message] = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.id, messageId));
+
+    if (!message || message.senderId !== userId) {
+      return false;
+    }
+
+    await db
+      .update(messages)
+      .set({ deleted: true })
+      .where(eq(messages.id, messageId));
+
+    return true;
+  }
+
+  async adminGetAllConversations(): Promise<Array<{ user1: { id: number; username: string }; user2: { id: number; username: string }; messageCount: number; lastMessageAt: Date | null }>> {
+    const allConvos = await db
+      .select()
+      .from(conversations)
+      .orderBy(desc(conversations.lastMessageAt));
+
+    const results = await Promise.all(
+      allConvos.map(async (convo) => {
+        const [user1] = await db
+          .select({ id: users.id, username: users.username })
+          .from(users)
+          .where(eq(users.id, convo.user1Id));
+
+        const [user2] = await db
+          .select({ id: users.id, username: users.username })
+          .from(users)
+          .where(eq(users.id, convo.user2Id));
+
+        const [msgCount] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(messages)
+          .where(eq(messages.conversationId, convo.id));
+
+        return {
+          user1: user1!,
+          user2: user2!,
+          messageCount: Number(msgCount?.count ?? 0),
+          lastMessageAt: convo.lastMessageAt,
+        };
+      })
+    );
+
+    return results;
+  }
+
+  async adminGetConversationMessages(user1Id: number, user2Id: number): Promise<Message[]> {
+    const conversation = await this.getConversation(user1Id, user2Id);
+    if (!conversation) return [];
+
+    const msgs = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversation.id))
+      .orderBy(messages.createdAt);
+
+    return msgs;
+  }
+
+  async adminDeleteMessage(messageId: number): Promise<boolean> {
+    await db
+      .update(messages)
+      .set({ deleted: true })
+      .where(eq(messages.id, messageId));
+    return true;
+  }
+
+  async adminLogConversationView(adminId: number, viewedUser1Id: number, viewedUser2Id: number): Promise<void> {
+    await db.insert(adminMessageAudit).values({
+      adminId,
+      viewedUser1Id,
+      viewedUser2Id,
+    });
+  }
+
+  async adminGetAuditLogs(): Promise<Array<AdminMessageAudit & { adminUsername: string; user1Username: string; user2Username: string }>> {
+    const logs = await db
+      .select({
+        id: adminMessageAudit.id,
+        adminId: adminMessageAudit.adminId,
+        viewedUser1Id: adminMessageAudit.viewedUser1Id,
+        viewedUser2Id: adminMessageAudit.viewedUser2Id,
+        viewedAt: adminMessageAudit.viewedAt,
+      })
+      .from(adminMessageAudit)
+      .orderBy(desc(adminMessageAudit.viewedAt));
+
+    const results = await Promise.all(
+      logs.map(async (log) => {
+        const [admin] = await db
+          .select({ username: users.username })
+          .from(users)
+          .where(eq(users.id, log.adminId));
+
+        const [user1] = await db
+          .select({ username: users.username })
+          .from(users)
+          .where(eq(users.id, log.viewedUser1Id));
+
+        const [user2] = await db
+          .select({ username: users.username })
+          .from(users)
+          .where(eq(users.id, log.viewedUser2Id));
+
+        return {
+          ...log,
+          adminUsername: admin?.username ?? 'Unknown',
+          user1Username: user1?.username ?? 'Unknown',
+          user2Username: user2?.username ?? 'Unknown',
+        };
+      })
+    );
+
+    return results;
   }
 }
 

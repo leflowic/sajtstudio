@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, User, Edit3, Save } from "lucide-react";
+import { Menu, X, LogOut, User, Edit3, Save, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEditMode } from "@/contexts/EditModeContext";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import leflowLogo from "@/assets/leflow-logo.png";
 
 export function Header() {
@@ -13,6 +16,31 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logoutMutation } = useAuth();
   const { isEditMode, toggleEditMode } = useEditMode();
+  const queryClient = useQueryClient();
+  const { subscribe } = useWebSocket();
+
+  // Fetch unread message count (only for verified users)
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ["/api/messages/unread-count"],
+    enabled: !!user && user.emailVerified === true,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const unreadCount = unreadData?.count ?? 0;
+
+  // Subscribe to WebSocket events to update unread count in real-time
+  useEffect(() => {
+    if (!user || !user.emailVerified) return;
+
+    const unsubscribe = subscribe((message) => {
+      if (message.type === 'new_message' || message.type === 'message_read') {
+        // Invalidate unread count query to refetch
+        queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
+      }
+    });
+
+    return unsubscribe;
+  }, [user, subscribe, queryClient]);
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -132,6 +160,22 @@ export function Header() {
             <ThemeToggle />
             {user ? (
               <>
+                {user.emailVerified && (
+                  <Button variant="ghost" size="icon" asChild className="relative">
+                    <Link href="/inbox">
+                      <MessageCircle className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </Badge>
+                      )}
+                      <span className="sr-only">Poruke ({unreadCount} nepročitanih)</span>
+                    </Link>
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" asChild>
                   <Link href="/settings">
                     <User className="h-5 w-5" />

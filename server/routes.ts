@@ -1527,6 +1527,216 @@ Sitemap: ${siteUrl}/sitemap.xml
     res.send(sitemap);
   });
 
+  // ===== MESSAGING ENDPOINTS =====
+  
+  // Search users (verified users only)
+  app.get("/api/users/search", requireVerifiedEmail, async (req, res) => {
+    try {
+      const { query } = req.query;
+      
+      if (!query || typeof query !== 'string' || query.trim().length < 2) {
+        return res.status(400).json({ error: "Query mora imati najmanje 2 karaktera" });
+      }
+      
+      const results = await storage.searchUsers(query.trim(), req.user!.id);
+      res.json(results);
+    } catch (error: any) {
+      console.error("[MESSAGING] User search error:", error);
+      res.status(500).json({ error: "Greška pri pretrazi korisnika" });
+    }
+  });
+
+  // Get all user conversations
+  app.get("/api/conversations", requireVerifiedEmail, async (req, res) => {
+    try {
+      const conversations = await storage.getUserConversations(req.user!.id);
+      res.json(conversations);
+    } catch (error: any) {
+      console.error("[MESSAGING] Get conversations error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju konverzacija" });
+    }
+  });
+
+  // Get messages for specific conversation
+  app.get("/api/messages/conversation/:userId", requireVerifiedEmail, async (req, res) => {
+    try {
+      const otherUserId = parseInt(req.params.userId);
+      
+      if (isNaN(otherUserId)) {
+        return res.status(400).json({ error: "Nevažeći ID korisnika" });
+      }
+      
+      const conversation = await storage.getConversation(req.user!.id, otherUserId);
+      
+      if (!conversation) {
+        return res.json([]);
+      }
+      
+      const messages = await storage.getConversationMessages(conversation.id, req.user!.id);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("[MESSAGING] Get messages error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju poruka" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/messages/send", requireVerifiedEmail, async (req, res) => {
+    try {
+      const { receiverId, content, imageUrl } = req.body;
+      
+      if (!receiverId || typeof receiverId !== 'number') {
+        return res.status(400).json({ error: "receiverId je obavezan" });
+      }
+      
+      if (receiverId === req.user!.id) {
+        return res.status(400).json({ error: "Ne možete slati poruke samom sebi" });
+      }
+      
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ error: "Poruka ne može biti prazna" });
+      }
+      
+      if (content.length > 5000) {
+        return res.status(400).json({ error: "Poruka može imati najviše 5000 karaktera" });
+      }
+      
+      // Check if receiver exists and is not banned
+      const receiver = await storage.getUser(receiverId);
+      if (!receiver) {
+        return res.status(404).json({ error: "Korisnik ne postoji" });
+      }
+      
+      if (receiver.banned) {
+        return res.status(403).json({ error: "Ne možete slati poruke banovanom korisniku" });
+      }
+      
+      const message = await storage.sendMessage(
+        req.user!.id, 
+        receiverId, 
+        content.trim(),
+        imageUrl
+      );
+      
+      res.json(message);
+    } catch (error: any) {
+      console.error("[MESSAGING] Send message error:", error);
+      res.status(500).json({ error: "Greška pri slanju poruke" });
+    }
+  });
+
+  // Mark messages as read
+  app.put("/api/messages/mark-read", requireVerifiedEmail, async (req, res) => {
+    try {
+      const { conversationId } = req.body;
+      
+      if (!conversationId || typeof conversationId !== 'number') {
+        return res.status(400).json({ error: "conversationId je obavezan" });
+      }
+      
+      await storage.markMessagesAsRead(conversationId, req.user!.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[MESSAGING] Mark as read error:", error);
+      res.status(500).json({ error: "Greška pri označavanju poruka" });
+    }
+  });
+
+  // Get unread message count
+  app.get("/api/messages/unread-count", requireVerifiedEmail, async (req, res) => {
+    try {
+      const count = await storage.getUnreadMessageCount(req.user!.id);
+      res.json({ count });
+    } catch (error: any) {
+      console.error("[MESSAGING] Get unread count error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju broja nepročitanih poruka" });
+    }
+  });
+
+  // Delete a message (user can only delete their own messages)
+  app.delete("/api/messages/:id", requireVerifiedEmail, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Nevažeći ID poruke" });
+      }
+      
+      const success = await storage.deleteMessage(messageId, req.user!.id);
+      
+      if (!success) {
+        return res.status(403).json({ error: "Ne možete obrisati ovu poruku" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[MESSAGING] Delete message error:", error);
+      res.status(500).json({ error: "Greška pri brisanju poruke" });
+    }
+  });
+
+  // ===== ADMIN MESSAGING ENDPOINTS =====
+  
+  // Get all conversations (admin only)
+  app.get("/api/admin/messages/conversations", requireAdmin, async (req, res) => {
+    try {
+      const conversations = await storage.adminGetAllConversations();
+      res.json(conversations);
+    } catch (error: any) {
+      console.error("[ADMIN MESSAGING] Get all conversations error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju konverzacija" });
+    }
+  });
+
+  // Get messages between two users (admin only)
+  app.get("/api/admin/messages/conversation/:user1Id/:user2Id", requireAdmin, async (req, res) => {
+    try {
+      const user1Id = parseInt(req.params.user1Id);
+      const user2Id = parseInt(req.params.user2Id);
+      
+      if (isNaN(user1Id) || isNaN(user2Id)) {
+        return res.status(400).json({ error: "Nevažeći ID korisnika" });
+      }
+      
+      // Log admin viewing this conversation
+      await storage.adminLogConversationView(req.user!.id, user1Id, user2Id);
+      
+      const messages = await storage.adminGetConversationMessages(user1Id, user2Id);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("[ADMIN MESSAGING] Get conversation messages error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju poruka" });
+    }
+  });
+
+  // Delete any message (admin only)
+  app.delete("/api/admin/messages/:id", requireAdmin, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Nevažeći ID poruke" });
+      }
+      
+      await storage.adminDeleteMessage(messageId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[ADMIN MESSAGING] Delete message error:", error);
+      res.status(500).json({ error: "Greška pri brisanju poruke" });
+    }
+  });
+
+  // Get admin audit logs
+  app.get("/api/admin/messages/audit-logs", requireAdmin, async (req, res) => {
+    try {
+      const logs = await storage.adminGetAuditLogs();
+      res.json(logs);
+    } catch (error: any) {
+      console.error("[ADMIN MESSAGING] Get audit logs error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju audit logova" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

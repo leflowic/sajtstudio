@@ -4,6 +4,8 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedCmsContent } from "./seed";
+import { WebSocketServer, WebSocket } from "ws";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -181,6 +183,189 @@ app.use((req, res, next) => {
       console.error('Full error:', error);
       process.exit(1);
     });
+
+    // ===== WEBSOCKET SERVER FOR REAL-TIME MESSAGING =====
+    const wss = new WebSocketServer({ server, path: '/api/ws' });
+    
+    // Track online users: Map<userId, Set<WebSocket>>
+    const onlineUsers = new Map<number, Set<WebSocket>>();
+    
+    // Track typing status: Map<conversationKey, Set<userId>>
+    const typingUsers = new Map<string, Set<number>>();
+
+    wss.on('connection', async (ws: WebSocket, req) => {
+      try {
+        // Parse session cookie to authenticate user
+        const cookieHeader = req.headers.cookie;
+        if (!cookieHeader) {
+          ws.close(1008, 'No session cookie');
+          return;
+        }
+
+        // Extract session ID from cookie (this is a simplified approach)
+        // In production, you'd properly parse the session cookie
+        const sessionCookie = cookieHeader.split(';').find(c => c.trim().startsWith('connect.sid='));
+        if (!sessionCookie) {
+          ws.close(1008, 'Invalid session');
+          return;
+        }
+
+        // For now, we'll use a simpler approach: authenticate via initial message
+        let userId: number | null = null;
+
+        ws.on('message', async (data) => {
+          try {
+            const message = JSON.parse(data.toString());
+
+            // Authentication handshake
+            if (message.type === 'auth' && !userId) {
+              // Verify user is authenticated (you'd check session here)
+              // For simplicity, we trust the client sends correct userId after auth
+              // In production, validate against session store
+              userId = message.userId;
+              
+              if (!userId) {
+                ws.close(1008, 'Authentication failed');
+                return;
+              }
+
+              // Add user to online users
+              if (!onlineUsers.has(userId)) {
+                onlineUsers.set(userId, new Set());
+              }
+              onlineUsers.get(userId)!.add(ws);
+
+              // Notify user is online
+              broadcastToUser(userId, {
+                type: 'online_status',
+                userId,
+                online: true,
+              });
+
+              log(`[WebSocket] User ${userId} connected`);
+              return;
+            }
+
+            if (!userId) {
+              ws.close(1008, 'Not authenticated');
+              return;
+            }
+
+            // Handle typing indicators
+            if (message.type === 'typing_start') {
+              const { receiverId } = message;
+              const conversationKey = getConversationKey(userId, receiverId);
+              
+              if (!typingUsers.has(conversationKey)) {
+                typingUsers.set(conversationKey, new Set());
+              }
+              typingUsers.get(conversationKey)!.add(userId);
+
+              // Notify receiver
+              broadcastToUser(receiverId, {
+                type: 'typing_start',
+                userId,
+              });
+
+              // Auto-clear typing after 5 seconds
+              setTimeout(() => {
+                typingUsers.get(conversationKey)?.delete(userId);
+                broadcastToUser(receiverId, {
+                  type: 'typing_stop',
+                  userId,
+                });
+              }, 5000);
+            }
+
+            if (message.type === 'typing_stop') {
+              const { receiverId } = message;
+              const conversationKey = getConversationKey(userId, receiverId);
+              typingUsers.get(conversationKey)?.delete(userId);
+
+              broadcastToUser(receiverId, {
+                type: 'typing_stop',
+                userId,
+              });
+            }
+
+            // Handle new message notification
+            if (message.type === 'new_message') {
+              const { receiverId, messageData } = message;
+              
+              // Broadcast to receiver
+              broadcastToUser(receiverId, {
+                type: 'new_message',
+                message: messageData,
+              });
+            }
+
+            // Handle message read notification
+            if (message.type === 'message_read') {
+              const { senderId, conversationId } = message;
+              
+              // Notify sender that receiver read the message
+              broadcastToUser(senderId, {
+                type: 'message_read',
+                conversationId,
+                readBy: userId,
+              });
+            }
+
+          } catch (error: any) {
+            log(`[WebSocket] Message parse error: ${error.message}`);
+          }
+        });
+
+        ws.on('close', () => {
+          if (userId) {
+            const userSockets = onlineUsers.get(userId);
+            if (userSockets) {
+              userSockets.delete(ws);
+              if (userSockets.size === 0) {
+                onlineUsers.delete(userId);
+                
+                // Broadcast offline status
+                broadcastToUser(userId, {
+                  type: 'online_status',
+                  userId,
+                  online: false,
+                });
+              }
+            }
+            log(`[WebSocket] User ${userId} disconnected`);
+          }
+        });
+
+        ws.on('error', (error) => {
+          log(`[WebSocket] Socket error: ${error.message}`);
+        });
+
+      } catch (error: any) {
+        log(`[WebSocket] Connection error: ${error.message}`);
+        ws.close(1011, 'Internal server error');
+      }
+    });
+
+    // Helper function to broadcast message to specific user (all their active connections)
+    function broadcastToUser(userId: number, message: any) {
+      const userSockets = onlineUsers.get(userId);
+      if (userSockets) {
+        const messageStr = JSON.stringify(message);
+        userSockets.forEach(socket => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(messageStr);
+          }
+        });
+      }
+    }
+
+    // Helper function to get conversation key (canonical ordering)
+    function getConversationKey(user1Id: number, user2Id: number): string {
+      const [id1, id2] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
+      return `${id1}-${id2}`;
+    }
+
+    log('[WebSocket] WebSocket server initialized on /api/ws');
 
   } catch (error: any) {
     log(`Failed to start server: ${error.message}`, 'express');

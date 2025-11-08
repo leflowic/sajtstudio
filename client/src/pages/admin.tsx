@@ -25,10 +25,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction, Send, Mail } from "lucide-react";
+import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction, Send, Mail, Eye } from "lucide-react";
 import { format } from "date-fns";
 import type { User, CmsContent, InsertCmsContent } from "@shared/schema";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 interface AdminStats {
   totalUsers: number;
@@ -59,6 +61,40 @@ interface CommentWithDetails {
   username: string;
   text: string;
   createdAt: string;
+}
+
+interface ConversationWithUsers {
+  id: number;
+  user1Id: number;
+  user2Id: number;
+  user1Username: string;
+  user2Username: string;
+  messageCount: number;
+  lastMessageAt: string;
+}
+
+interface MessageWithSender {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  senderUsername: string;
+  receiverId: number;
+  receiverUsername: string;
+  content: string;
+  imageUrl: string | null;
+  deleted: boolean;
+  createdAt: string;
+}
+
+interface AuditLogEntry {
+  id: number;
+  adminId: number;
+  adminUsername: string;
+  viewedUser1Id: number;
+  viewedUser2Id: number;
+  user1Username: string;
+  user2Username: string;
+  viewedAt: string;
 }
 
 export default function AdminPage() {
@@ -107,12 +143,13 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full" data-testid="tabs-admin">
-          <TabsList className="grid w-full grid-cols-7 mb-8" data-testid="tabs-list-admin">
+          <TabsList className="grid w-full grid-cols-8 mb-8" data-testid="tabs-list-admin">
             <TabsTrigger value="dashboard" data-testid="tab-dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">Korisnici</TabsTrigger>
             <TabsTrigger value="projects" data-testid="tab-projects">Projekti</TabsTrigger>
             <TabsTrigger value="comments" data-testid="tab-comments">Komentari</TabsTrigger>
             <TabsTrigger value="newsletter" data-testid="tab-newsletter">Newsletter</TabsTrigger>
+            <TabsTrigger value="messages" data-testid="tab-messages">Poruke</TabsTrigger>
             <TabsTrigger value="cms" data-testid="tab-cms">CMS</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">Podešavanja</TabsTrigger>
           </TabsList>
@@ -135,6 +172,10 @@ export default function AdminPage() {
 
           <TabsContent value="newsletter">
             <NewsletterTab />
+          </TabsContent>
+
+          <TabsContent value="messages">
+            <MessagesTab />
           </TabsContent>
 
           <TabsContent value="cms">
@@ -558,6 +599,287 @@ function NewsletterTab() {
                           </AlertDialog>
                         </div>
                       </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function MessagesTab() {
+  const { toast } = useToast();
+  const [selectedConversation, setSelectedConversation] = useState<ConversationWithUsers | null>(null);
+
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery<ConversationWithUsers[]>({
+    queryKey: ["/api/admin/messages/conversations"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/messages/conversations");
+      if (!response.ok) throw new Error("Failed to load conversations");
+      return await response.json();
+    },
+  });
+
+  const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery<MessageWithSender[]>({
+    queryKey: ["/api/admin/messages/conversation", selectedConversation?.user1Id, selectedConversation?.user2Id],
+    queryFn: async () => {
+      if (!selectedConversation) return [];
+      const response = await fetch(`/api/admin/messages/conversation/${selectedConversation.user1Id}/${selectedConversation.user2Id}`);
+      if (!response.ok) throw new Error("Failed to load messages");
+      return await response.json();
+    },
+    enabled: !!selectedConversation,
+  });
+
+  const { data: auditLogs = [], isLoading: auditLoading } = useQuery<AuditLogEntry[]>({
+    queryKey: ["/api/admin/messages/audit-logs"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/messages/audit-logs");
+      if (!response.ok) throw new Error("Failed to load audit logs");
+      return await response.json();
+    },
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      const response = await fetch(`/api/admin/messages/${messageId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete message");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/messages/conversation"] });
+      refetchMessages();
+      toast({
+        title: "Uspeh",
+        description: "Poruka je obrisana",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri brisanju poruke",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "dd.MM.yyyy HH:mm");
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <CardTitle>Konverzacije</CardTitle>
+            </div>
+            <CardDescription>
+              Lista svih konverzacija između korisnika
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {conversationsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : conversations.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nema konverzacija
+              </p>
+            ) : (
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-2">
+                  {conversations.map((conversation) => (
+                    <Card
+                      key={conversation.id}
+                      className={`cursor-pointer transition-colors hover:bg-accent ${
+                        selectedConversation?.id === conversation.id ? "bg-accent border-primary" : ""
+                      }`}
+                      onClick={() => setSelectedConversation(conversation)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {conversation.user1Username} ↔ {conversation.user2Username}
+                            </span>
+                          </div>
+                          <Badge variant="secondary">{conversation.messageCount}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Poslednja poruka: {formatDate(conversation.lastMessageAt)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <CardTitle>
+                {selectedConversation
+                  ? `${selectedConversation.user1Username} i ${selectedConversation.user2Username} - Konverzacija`
+                  : "Pregled Poruka"}
+              </CardTitle>
+            </div>
+            <CardDescription>
+              {selectedConversation
+                ? "Izaberite poruku da biste je obrisali"
+                : "Izaberite konverzaciju da biste videli poruke"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!selectedConversation ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <MessageCircle className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Izaberite konverzaciju
+                </p>
+              </div>
+            ) : messagesLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : messages.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nema poruka u ovoj konverzaciji
+              </p>
+            ) : (
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-3">
+                  {messages.map((message) => (
+                    <Card key={message.id} className={message.deleted ? "border-destructive/50 bg-destructive/5" : ""}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-sm">
+                                {message.senderUsername}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(message.createdAt)}
+                              </span>
+                            </div>
+                            {message.deleted ? (
+                              <p className="text-sm text-destructive italic">
+                                Poruka obrisana
+                              </p>
+                            ) : (
+                              <p className="text-sm">{message.content}</p>
+                            )}
+                            {message.imageUrl && !message.deleted && (
+                              <img
+                                src={message.imageUrl}
+                                alt="Message attachment"
+                                className="mt-2 max-w-xs rounded-lg"
+                              />
+                            )}
+                          </div>
+                          {!message.deleted && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Obriši poruku</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Da li ste sigurni da želite da obrišete ovu poruku? Poruka će biti označena kao obrisana i njen sadržaj će biti sakriven.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Otkaži</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMessageMutation.mutate(message.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Obriši
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Separator className="my-6" />
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Eye className="w-5 h-5 text-primary" />
+            <CardTitle>Audit Log - Pregled Poruka</CardTitle>
+          </div>
+          <CardDescription>
+            Evidencija svih administratorskih pregleda privatnih konverzacija
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {auditLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Nema audit log zapisa
+            </p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Admin</TableHead>
+                    <TableHead>Pregledane Konverzacije</TableHead>
+                    <TableHead>Vreme Pregleda</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-medium">{log.adminUsername}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span>{log.user1Username} ↔ {log.user2Username}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatDate(log.viewedAt)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

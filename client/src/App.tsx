@@ -22,6 +22,7 @@ import AdminPage from "@/pages/admin";
 import TermsOfUse from "@/pages/terms-of-use";
 import Settings from "@/pages/settings";
 import VideoSpots from "@/pages/video-spots";
+import Inbox from "@/pages/inbox";
 import NotFound from "@/pages/not-found";
 import MaintenancePage from "@/pages/maintenance";
 import NewsletterConfirmation from "@/pages/newsletter-confirmation";
@@ -93,6 +94,7 @@ function Router() {
               <Route path="/newsletter/potvrda/:token" component={NewsletterConfirmation} />
               <Route path="/uslovi-koriscenja" component={TermsOfUse} />
               <ProtectedRoute path="/giveaway" component={Giveaway} />
+              <ProtectedRoute path="/inbox" component={Inbox} />
               <ProtectedRoute path="/admin" component={AdminPage} />
               <ProtectedRoute path="/settings" component={Settings} />
               <Route component={NotFound} />
