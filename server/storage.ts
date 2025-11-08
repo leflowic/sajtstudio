@@ -143,7 +143,7 @@ export interface IStorage {
   markMessagesAsRead(conversationId: number, userId: number): Promise<void>;
   getUnreadMessageCount(userId: number): Promise<number>;
   deleteMessage(messageId: number, userId: number): Promise<boolean>;
-  adminGetAllConversations(): Promise<Array<{ id: number; user1Id: number; user2Id: number; user1Username: string; user2Username: string; messageCount: number; lastMessageAt: Date | null }>>;
+  adminGetAllConversations(): Promise<Array<{ id: number; user1Id: number; user2Id: number; user1Username: string; user2Username: string; messageCount: number; lastMessageAt: Date | null; lastMessageContent: string | null; lastMessageSenderUsername: string | null; lastMessageDeleted: boolean }>>;
   adminGetConversationMessages(user1Id: number, user2Id: number): Promise<Message[]>;
   adminDeleteMessage(messageId: number): Promise<boolean>;
   adminLogConversationView(adminId: number, viewedUser1Id: number, viewedUser2Id: number): Promise<void>;
@@ -1026,7 +1026,7 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async adminGetAllConversations(): Promise<Array<{ id: number; user1Id: number; user2Id: number; user1Username: string; user2Username: string; messageCount: number; lastMessageAt: Date | null }>> {
+  async adminGetAllConversations(): Promise<Array<{ id: number; user1Id: number; user2Id: number; user1Username: string; user2Username: string; messageCount: number; lastMessageAt: Date | null; lastMessageContent: string | null; lastMessageSenderUsername: string | null; lastMessageDeleted: boolean }>> {
     const allConvos = await db
       .select()
       .from(conversations)
@@ -1049,6 +1049,27 @@ export class DatabaseStorage implements IStorage {
           .from(messages)
           .where(eq(messages.conversationId, convo.id));
 
+        // Get last message with sender info
+        const [lastMsg] = await db
+          .select({
+            content: messages.content,
+            senderId: messages.senderId,
+            deleted: messages.deleted,
+          })
+          .from(messages)
+          .where(eq(messages.conversationId, convo.id))
+          .orderBy(desc(messages.createdAt))
+          .limit(1);
+
+        let lastMessageSenderUsername: string | null = null;
+        if (lastMsg) {
+          const [sender] = await db
+            .select({ username: users.username })
+            .from(users)
+            .where(eq(users.id, lastMsg.senderId));
+          lastMessageSenderUsername = sender?.username || null;
+        }
+
         return {
           id: convo.id,
           user1Id: convo.user1Id,
@@ -1057,6 +1078,9 @@ export class DatabaseStorage implements IStorage {
           user2Username: user2?.username || 'Unknown',
           messageCount: Number(msgCount?.count ?? 0),
           lastMessageAt: convo.lastMessageAt,
+          lastMessageContent: lastMsg?.content || null,
+          lastMessageSenderUsername,
+          lastMessageDeleted: lastMsg?.deleted || false,
         };
       })
     );

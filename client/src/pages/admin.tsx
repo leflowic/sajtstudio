@@ -71,6 +71,9 @@ interface ConversationWithUsers {
   user2Username: string;
   messageCount: number;
   lastMessageAt: string;
+  lastMessageContent: string | null;
+  lastMessageSenderUsername: string | null;
+  lastMessageDeleted: boolean;
 }
 
 interface MessageWithSender {
@@ -718,8 +721,22 @@ function MessagesTab() {
                           </div>
                           <Badge variant="secondary">{conversation.messageCount}</Badge>
                         </div>
+                        {conversation.lastMessageContent && (
+                          <p className="text-sm text-muted-foreground mb-1">
+                            <span className="font-medium text-foreground">
+                              {conversation.lastMessageSenderUsername}:
+                            </span>{' '}
+                            {conversation.lastMessageDeleted ? (
+                              <span className="italic text-destructive">Poruka obrisana</span>
+                            ) : (
+                              conversation.lastMessageContent.length > 60
+                                ? conversation.lastMessageContent.substring(0, 60) + '...'
+                                : conversation.lastMessageContent
+                            )}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Poslednja poruka: {formatDate(conversation.lastMessageAt)}
+                          {formatDate(conversation.lastMessageAt)}
                         </p>
                       </CardContent>
                     </Card>
