@@ -53,38 +53,30 @@ function formatTimestamp(dateString: string): string {
 
 export default function ConversationList({ selectedUserId, onSelectConversation }: ConversationListProps) {
   const { user } = useAuth();
-  // WebSocket temporarily disabled for debugging
-  // const { subscribe } = useWebSocketContext();
+  const { subscribe } = useWebSocketContext();
 
-  const { data: conversations, isLoading, refetch, error } = useQuery<ConversationData[]>({
+  const { data: conversations, isLoading, refetch } = useQuery<ConversationData[]>({
     queryKey: ["/api/conversations"],
     queryFn: async () => {
-      console.log('[ConversationList] Fetching conversations...');
       const res = await fetch("/api/conversations", { cache: "no-store" });
-      console.log('[ConversationList] Response status:', res.status);
       if (!res.ok) throw new Error("Failed to fetch conversations");
-      const data = await res.json();
-      console.log('[ConversationList] Data received:', data);
-      return data;
+      return res.json();
     },
     refetchInterval: 30000,
   });
 
-  console.log('[ConversationList] Render - conversations:', conversations, 'isLoading:', isLoading, 'error:', error);
+  useEffect(() => {
+    const unsubscribe = subscribe((message) => {
+      if (message.type === "new_message") {
+        refetch();
+      }
+      if (message.type === "message_read") {
+        refetch();
+      }
+    });
 
-  // WebSocket listeners temporarily disabled
-  // useEffect(() => {
-  //   const unsubscribe = subscribe((message) => {
-  //     if (message.type === "new_message") {
-  //       refetch();
-  //     }
-  //     if (message.type === "message_read") {
-  //       refetch();
-  //     }
-  //   });
-
-  //   return unsubscribe;
-  // }, [subscribe, refetch]);
+    return unsubscribe;
+  }, [subscribe, refetch]);
 
   const truncateMessage = (text: string | null, maxLength: number = 50): string => {
     if (!text) return "";
