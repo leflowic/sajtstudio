@@ -3,17 +3,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useUploadThing } from "@/lib/uploadthing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Lock, AlertCircle } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { User, Mail, Lock, AlertCircle, Upload, Loader2, ImageIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [profileForm, setProfileForm] = useState({
     username: user?.username || "",
@@ -25,6 +28,51 @@ export default function Settings() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const { startUpload: startAvatarUpload } = useUploadThing("avatarUploader", {
+    onClientUploadComplete: async (files) => {
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (!file) return;
+        
+        try {
+          await apiRequest("PUT", "/api/user/avatar", {
+            avatarUrl: file.url,
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          setIsUploadingAvatar(false);
+          
+          toast({
+            title: "Avatar ažuriran",
+            description: "Vaša profilna slika je uspešno promenjena",
+          });
+        } catch (error: any) {
+          setIsUploadingAvatar(false);
+          toast({
+            title: "Greška",
+            description: error.message || "Greška pri čuvanju avatara",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    onUploadError: (error: Error) => {
+      setIsUploadingAvatar(false);
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri upload-u slike",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return;
+    
+    setIsUploadingAvatar(true);
+    await startAvatarUpload([file]);
+  };
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { username?: string; email?: string }) => {
@@ -144,6 +192,67 @@ export default function Settings() {
         </div>
 
         <div className="space-y-6">
+          {/* Avatar Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5" />
+                Profilna slika
+              </CardTitle>
+              <CardDescription>
+                Postavite ili promenite vašu profilnu sliku
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-6">
+                <Avatar className="w-24 h-24">
+                  {user?.avatarUrl ? (
+                    <AvatarImage src={user.avatarUrl} alt={user.username} />
+                  ) : (
+                    <AvatarFallback className="text-2xl bg-primary/10">
+                      <User className="w-12 h-12 text-primary" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Preporučena veličina: 400x400px. Max: 4MB
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={isUploadingAvatar}
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/png,image/jpeg,image/webp';
+                        input.onchange = (e: any) => {
+                          const file = e.target?.files?.[0];
+                          if (file) handleAvatarUpload(file);
+                        };
+                        input.click();
+                      }}
+                      data-testid="button-upload-avatar"
+                    >
+                      {isUploadingAvatar ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Upload u toku...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload slike
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Profile Settings */}
           <Card>
             <CardHeader>
