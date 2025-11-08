@@ -72,7 +72,8 @@ export default function ConversationList({ selectedUserId, onSelectConversation 
     return unsubscribe;
   }, [subscribe, refetch]);
 
-  const truncateMessage = (text: string, maxLength: number = 50): string => {
+  const truncateMessage = (text: string | null, maxLength: number = 50): string => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
