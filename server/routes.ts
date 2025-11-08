@@ -1532,13 +1532,13 @@ Sitemap: ${siteUrl}/sitemap.xml
   // Search users (verified users only)
   app.get("/api/users/search", requireVerifiedEmail, async (req, res) => {
     try {
-      const { query } = req.query;
+      const { q } = req.query;
       
-      if (!query || typeof query !== 'string' || query.trim().length < 2) {
+      if (!q || typeof q !== 'string' || q.trim().length < 2) {
         return res.status(400).json({ error: "Query mora imati najmanje 2 karaktera" });
       }
       
-      const results = await storage.searchUsers(query.trim(), req.user!.id);
+      const results = await storage.searchUsers(q.trim(), req.user!.id);
       res.json(results);
     } catch (error: any) {
       console.error("[MESSAGING] User search error:", error);
