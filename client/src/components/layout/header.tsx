@@ -4,6 +4,7 @@ import { Menu, X, LogOut, User, Edit3, Save, MessageCircle } from "lucide-react"
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEditMode } from "@/contexts/EditModeContext";
@@ -176,12 +177,18 @@ export function Header() {
                     </Link>
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href="/settings">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Podešavanja</span>
-                  </Link>
-                </Button>
+                <Link href="/settings" className="hover-elevate rounded-full">
+                  <Avatar className="h-9 w-9">
+                    {user.avatarUrl ? (
+                      <AvatarImage src={user.avatarUrl} alt={user.username} />
+                    ) : (
+                      <AvatarFallback className="bg-primary/10">
+                        <User className="h-5 w-5 text-primary" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span className="sr-only">Podešavanja</span>
+                </Link>
                 <Button 
                   variant="ghost" 
                   size="icon"
@@ -294,10 +301,18 @@ export function Header() {
                     <Link href="/settings">
                       <Button 
                         variant="outline" 
-                        className="w-full"
+                        className="w-full justify-start"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <User className="h-4 w-4 mr-2" />
+                        <Avatar className="h-6 w-6 mr-2">
+                          {user.avatarUrl ? (
+                            <AvatarImage src={user.avatarUrl} alt={user.username} />
+                          ) : (
+                            <AvatarFallback className="bg-primary/10 text-xs">
+                              <User className="h-4 w-4 text-primary" />
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
                         Podešavanja
                       </Button>
                     </Link>
