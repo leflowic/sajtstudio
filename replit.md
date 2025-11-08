@@ -38,6 +38,23 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
 - **Resend**: Email service for user verification, password resets, contact form notifications, and newsletter confirmations.
 - **UploadThing**: File upload service for MP3 files (max 16MB per file).
 
+## Recent Updates (2025-11-08)
+- **Messaging System - Database Schema & Legal Compliance**: Advanced real-time messaging infrastructure foundation established:
+  - **Database Schema (4 tables)**:
+    * `conversations` - user-to-user chat threads with canonical ordering (user1_id < user2_id) enforced by PostgreSQL trigger
+    * `messages` - text/image messages with sender, receiver, timestamps, deletion tracking
+    * `message_reads` - read receipts for "seen" status (\u2713\u2713 checkmarks) per user per message
+    * `admin_message_audit` - compliance logging when admin views conversations (timestamp, admin username, viewed users)
+  - **PostgreSQL Trigger**: `enforce_canonical_conversation_users()` automatically swaps user IDs to prevent duplicate (A,B)/(B,A) conversations
+  - **Performance Indexes (5)**: Optimized for real-time queries - conversation sorting, message fetching, read status, admin oversight
+  - **Git-Tracked Persistence**: Trigger creation logic in server/seed.ts ensures consistent deployment across environments
+  - **Legal Compliance - Terms of Service & Privacy**:
+    * Added mandatory Terms of Service checkbox on registration with Zod validation requiring acceptance
+    * Privacy notice on both login and registration: "Napomena: Privatne poruke mogu biti regulisane od strane administratora u svrhu bezbednosti i moderacije."
+    * Frontend validation (React Hook Form + Zod) + backend validation (insertUserSchema) for termsAccepted field
+    * Alert component with AlertTriangle icon for visibility on auth pages
+  - **Files Modified**: shared/schema.ts (4 new tables, insertUserSchema update), server/seed.ts (trigger creation), client/src/pages/auth-page.tsx (checkbox + privacy notices)
+
 ## Recent Updates (2025-11-07)
 - **Google Search SEO & Favicon Optimization**: Comprehensive SEO improvements for better Google Search visibility:
   - Generated multi-size favicon system (16x16, 32x32, 48x48, 192x192, 512x512, 180x180 Apple, .ico) using Sharp library
