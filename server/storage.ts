@@ -143,7 +143,7 @@ export interface IStorage {
   markMessagesAsRead(conversationId: number, userId: number): Promise<void>;
   getUnreadMessageCount(userId: number): Promise<number>;
   deleteMessage(messageId: number, userId: number): Promise<boolean>;
-  adminGetAllConversations(): Promise<Array<{ user1: { id: number; username: string }; user2: { id: number; username: string }; messageCount: number; lastMessageAt: Date | null }>>;
+  adminGetAllConversations(): Promise<Array<{ id: number; user1Id: number; user2Id: number; user1Username: string; user2Username: string; messageCount: number; lastMessageAt: Date | null }>>;
   adminGetConversationMessages(user1Id: number, user2Id: number): Promise<Message[]>;
   adminDeleteMessage(messageId: number): Promise<boolean>;
   adminLogConversationView(adminId: number, viewedUser1Id: number, viewedUser2Id: number): Promise<void>;
@@ -1026,7 +1026,7 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async adminGetAllConversations(): Promise<Array<{ user1: { id: number; username: string }; user2: { id: number; username: string }; messageCount: number; lastMessageAt: Date | null }>> {
+  async adminGetAllConversations(): Promise<Array<{ id: number; user1Id: number; user2Id: number; user1Username: string; user2Username: string; messageCount: number; lastMessageAt: Date | null }>> {
     const allConvos = await db
       .select()
       .from(conversations)
@@ -1050,8 +1050,11 @@ export class DatabaseStorage implements IStorage {
           .where(eq(messages.conversationId, convo.id));
 
         return {
-          user1: user1!,
-          user2: user2!,
+          id: convo.id,
+          user1Id: convo.user1Id,
+          user2Id: convo.user2Id,
+          user1Username: user1?.username || 'Unknown',
+          user2Username: user2?.username || 'Unknown',
           messageCount: Number(msgCount?.count ?? 0),
           lastMessageAt: convo.lastMessageAt,
         };
