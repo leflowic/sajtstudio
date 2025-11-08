@@ -796,9 +796,9 @@ function MessagesTab() {
                     <Card key={message.id} className={message.deleted ? "border-destructive/50 bg-destructive/5" : ""}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-muted-foreground">
                                 {message.senderUsername}
                               </span>
                               <span className="text-xs text-muted-foreground">
