@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Music, ArrowLeft, Mail, Lock, CheckCircle2 } from "lucide-react";
+import { Music, ArrowLeft, Mail, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VerificationModal } from "@/components/VerificationModal";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -30,6 +33,9 @@ const loginSchema = z.object({
 
 const registerSchema = insertUserSchema.extend({
   passwordConfirm: z.string(),
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: "Morate prihvatiti uslove korišćenja",
+  }),
 }).refine((data) => data.password === data.passwordConfirm, {
   message: "Lozinke se ne poklapaju",
   path: ["passwordConfirm"],
@@ -83,6 +89,7 @@ export default function AuthPage() {
       username: "",
       password: "",
       passwordConfirm: "",
+      termsAccepted: false,
     },
   });
 
@@ -521,6 +528,13 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="space-y-4">
+              <Alert className="border-primary/20 bg-primary/5 mb-4">
+                <AlertTriangle className="w-4 h-4 text-primary" />
+                <AlertDescription className="text-sm">
+                  <strong>Napomena:</strong> Privatne poruke mogu biti regulisane od strane administratora u svrhu bezbednosti i moderacije.
+                </AlertDescription>
+              </Alert>
+
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                   <FormField
@@ -664,6 +678,35 @@ export default function AuthPage() {
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Alert className="border-primary/20 bg-primary/5">
+                    <AlertTriangle className="w-4 h-4 text-primary" />
+                    <AlertDescription className="text-sm">
+                      <strong>Napomena:</strong> Privatne poruke mogu biti regulisane od strane administratora u svrhu bezbednosti i moderacije.
+                    </AlertDescription>
+                  </Alert>
+
+                  <FormField
+                    control={registerForm.control}
+                    name="termsAccepted"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-terms"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal cursor-pointer">
+                            Prihvatam da administrator ima pristup privatnim porukama u svrhu bezbednosti i moderacije, i saglasan sam sa uslovima korišćenja platforme.
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
                       </FormItem>
                     )}
                   />

@@ -301,13 +301,17 @@ export const messageReadsRelations = relations(messageReads, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
-  termsAccepted: true,
   role: true,
   banned: true,
 }).extend({
   email: z.string().email("Unesite validnu email adresu"),
   password: z.string().min(8, "Lozinka mora imati najmanje 8 karaktera"),
   username: z.string().min(3, "Korisničko ime mora imati najmanje 3 karaktera"),
+  termsAccepted: z.boolean({
+    required_error: "Morate prihvatiti uslove korišćenja",
+  }).refine((val) => val === true, {
+    message: "Morate prihvatiti uslove korišćenja",
+  }),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
