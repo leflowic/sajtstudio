@@ -721,22 +721,8 @@ function MessagesTab() {
                           </div>
                           <Badge variant="secondary">{conversation.messageCount}</Badge>
                         </div>
-                        {conversation.lastMessageContent && (
-                          <p className="text-sm text-muted-foreground mb-1">
-                            <span className="font-medium text-foreground">
-                              {conversation.lastMessageSenderUsername}:
-                            </span>{' '}
-                            {conversation.lastMessageDeleted ? (
-                              <span className="italic text-destructive">Poruka obrisana</span>
-                            ) : (
-                              conversation.lastMessageContent.length > 60
-                                ? conversation.lastMessageContent.substring(0, 60) + '...'
-                                : conversation.lastMessageContent
-                            )}
-                          </p>
-                        )}
                         <p className="text-xs text-muted-foreground">
-                          {formatDate(conversation.lastMessageAt)}
+                          Poslednja poruka: {formatDate(conversation.lastMessageAt)}
                         </p>
                       </CardContent>
                     </Card>
@@ -757,11 +743,33 @@ function MessagesTab() {
                   : "Pregled Poruka"}
               </CardTitle>
             </div>
-            <CardDescription>
-              {selectedConversation
-                ? "Izaberite poruku da biste je obrisali"
-                : "Izaberite konverzaciju da biste videli poruke"}
-            </CardDescription>
+            {selectedConversation ? (
+              <CardDescription>
+                {selectedConversation.lastMessageContent ? (
+                  <div className="space-y-1">
+                    <p className="text-sm">
+                      <span className="font-medium text-foreground">
+                        {selectedConversation.lastMessageSenderUsername}:
+                      </span>{' '}
+                      {selectedConversation.lastMessageDeleted ? (
+                        <span className="italic text-destructive">Poruka obrisana</span>
+                      ) : (
+                        selectedConversation.lastMessageContent.length > 80
+                          ? selectedConversation.lastMessageContent.substring(0, 80) + '...'
+                          : selectedConversation.lastMessageContent
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Kliknite na poruku da biste je obrisali
+                    </p>
+                  </div>
+                ) : (
+                  "Izaberite poruku da biste je obrisali"
+                )}
+              </CardDescription>
+            ) : (
+              <CardDescription>Izaberite konverzaciju da biste videli poruke</CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             {!selectedConversation ? (
