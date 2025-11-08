@@ -528,13 +528,6 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="space-y-4">
-              <Alert className="border-primary/20 bg-primary/5 mb-4">
-                <AlertTriangle className="w-4 h-4 text-primary" />
-                <AlertDescription className="text-sm">
-                  <strong>Napomena:</strong> Privatne poruke mogu biti regulisane od strane administratora u svrhu bezbednosti i moderacije.
-                </AlertDescription>
-              </Alert>
-
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                   <FormField
@@ -681,13 +674,6 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
-
-                  <Alert className="border-primary/20 bg-primary/5">
-                    <AlertTriangle className="w-4 h-4 text-primary" />
-                    <AlertDescription className="text-sm">
-                      <strong>Napomena:</strong> Privatne poruke mogu biti regulisane od strane administratora u svrhu bezbednosti i moderacije.
-                    </AlertDescription>
-                  </Alert>
 
                   <FormField
                     control={registerForm.control}
