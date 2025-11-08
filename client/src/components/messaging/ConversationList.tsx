@@ -4,6 +4,7 @@ import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User, Loader2 } from "lucide-react";
 import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { sr } from "date-fns/locale";
@@ -13,8 +14,11 @@ import UserSearch from "./UserSearch";
 
 interface ConversationData {
   id: number;
-  otherUserId: number;
-  otherUsername: string;
+  otherUser: {
+    id: number;
+    username: string;
+    avatarUrl: string | null;
+  };
   lastMessage: {
     id: number;
     content: string;
@@ -106,19 +110,25 @@ export default function ConversationList({ selectedUserId, onSelectConversation 
             {conversations.map((conversation) => (
               <button
                 key={conversation.id}
-                onClick={() => onSelectConversation(conversation.otherUserId)}
+                onClick={() => onSelectConversation(conversation.otherUser.id)}
                 className={cn(
                   "w-full flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors text-left border-b",
-                  selectedUserId === conversation.otherUserId && "bg-muted"
+                  selectedUserId === conversation.otherUser.id && "bg-muted"
                 )}
               >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-primary" />
-                </div>
+                <Avatar className="w-10 h-10 flex-shrink-0">
+                  {conversation.otherUser.avatarUrl ? (
+                    <AvatarImage src={conversation.otherUser.avatarUrl} alt={conversation.otherUser.username} />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10">
+                      <User className="w-5 h-5 text-primary" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-semibold text-sm truncate">
-                      {conversation.otherUsername}
+                      {conversation.otherUser.username}
                     </p>
                     <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
                       {formatTimestamp(conversation.lastMessageAt)}

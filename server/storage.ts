@@ -134,7 +134,7 @@ export interface IStorage {
   searchUsers(query: string, currentUserId: number): Promise<Array<{ id: number; username: string; email: string }>>;
   getOrCreateConversation(user1Id: number, user2Id: number): Promise<Conversation>;
   getConversation(user1Id: number, user2Id: number): Promise<Conversation | undefined>;
-  getUserConversations(userId: number): Promise<Array<Conversation & { otherUser: { id: number; username: string }; lastMessage?: Message; unreadCount: number }>>;
+  getUserConversations(userId: number): Promise<Array<Conversation & { otherUser: { id: number; username: string; avatarUrl: string | null }; lastMessage?: Message; unreadCount: number }>>;
   sendMessage(senderId: number, receiverId: number, content: string, imageUrl?: string): Promise<Message>;
   getConversationMessages(conversationId: number, userId: number): Promise<Message[]>;
   markMessagesAsRead(conversationId: number, userId: number): Promise<void>;
@@ -871,7 +871,7 @@ export class DatabaseStorage implements IStorage {
     return conversation || undefined;
   }
 
-  async getUserConversations(userId: number): Promise<Array<Conversation & { otherUser: { id: number; username: string }; lastMessage?: Message; unreadCount: number }>> {
+  async getUserConversations(userId: number): Promise<Array<Conversation & { otherUser: { id: number; username: string; avatarUrl: string | null }; lastMessage?: Message; unreadCount: number }>> {
     const userConvos = await db
       .select()
       .from(conversations)
@@ -884,7 +884,7 @@ export class DatabaseStorage implements IStorage {
       userConvos.map(async (convo) => {
         const otherUserId = convo.user1Id === userId ? convo.user2Id : convo.user1Id;
         const [otherUser] = await db
-          .select({ id: users.id, username: users.username })
+          .select({ id: users.id, username: users.username, avatarUrl: users.avatarUrl })
           .from(users)
           .where(eq(users.id, otherUserId));
 
