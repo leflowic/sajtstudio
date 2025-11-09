@@ -55,7 +55,7 @@ import {
   communityMessages,
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, or, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, sql, notInArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Store } from "express-session";
@@ -2161,7 +2161,7 @@ export class DatabaseStorage implements IStorage {
         if (idsToKeep.length > 0) {
           await tx
             .delete(communityMessages)
-            .where(sql`${communityMessages.id} NOT IN ${idsToKeep}`);
+            .where(notInArray(communityMessages.id, idsToKeep));
         }
 
         return inserted;
