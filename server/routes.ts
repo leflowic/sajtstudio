@@ -1601,6 +1601,23 @@ Sitemap: ${siteUrl}/sitemap.xml
 
   // ===== MESSAGING ENDPOINTS =====
   
+  // Search users (verified users only) - MUST BE BEFORE /api/users/:id
+  app.get("/api/users/search", requireVerifiedEmail, async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string' || q.trim().length < 2) {
+        return res.status(400).json({ error: "Query mora imati najmanje 2 karaktera" });
+      }
+      
+      const results = await storage.searchUsers(q.trim(), req.user!.id);
+      res.json(results);
+    } catch (error: any) {
+      console.error("[MESSAGING] User search error:", error);
+      res.status(500).json({ error: "Greška pri pretrazi korisnika" });
+    }
+  });
+  
   // Get user by ID (verified users only)
   app.get("/api/users/:id", requireVerifiedEmail, async (req, res) => {
     try {
@@ -1621,23 +1638,6 @@ Sitemap: ${siteUrl}/sitemap.xml
     } catch (error: any) {
       console.error("[MESSAGING] Get user error:", error);
       res.status(500).json({ error: "Greška pri učitavanju korisnika" });
-    }
-  });
-  
-  // Search users (verified users only)
-  app.get("/api/users/search", requireVerifiedEmail, async (req, res) => {
-    try {
-      const { q } = req.query;
-      
-      if (!q || typeof q !== 'string' || q.trim().length < 2) {
-        return res.status(400).json({ error: "Query mora imati najmanje 2 karaktera" });
-      }
-      
-      const results = await storage.searchUsers(q.trim(), req.user!.id);
-      res.json(results);
-    } catch (error: any) {
-      console.error("[MESSAGING] User search error:", error);
-      res.status(500).json({ error: "Greška pri pretrazi korisnika" });
     }
   });
 
