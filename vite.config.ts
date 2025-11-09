@@ -1,10 +1,11 @@
-import { defineConfig, createLogger } from "vite";
+import { defineConfig, createLogger, splitVendorChunkPlugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
 import runtimeErrorModal from "@replit/vite-plugin-runtime-error-modal";
 import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
+import { visualizer } from 'rollup-plugin-visualizer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,12 @@ export default defineConfig({
   plugins: [
     react(),
     runtimeErrorModal(),
+    splitVendorChunkPlugin(),
+    visualizer({
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }) as any,
   ],
   optimizeDeps: {
     include: ['react', 'react-dom'],
@@ -45,15 +52,13 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist", "public"),
     emptyOutDir: true,
-    modulePreload: false,
+    // ENABLE modulePreload - this guarantees correct chunk loading order!
+    modulePreload: {
+      polyfill: true,
+    },
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // Single vendor bundle - NO splitting to avoid chunk ordering issues
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        },
+        // Let splitVendorChunkPlugin handle vendor splitting intelligently
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',

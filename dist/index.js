@@ -4972,13 +4972,14 @@ import path4 from "path";
 import { createServer as createViteServer, createLogger as createLogger2 } from "vite";
 
 // vite.config.ts
-import { defineConfig, createLogger } from "vite";
+import { defineConfig, createLogger, splitVendorChunkPlugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path3 from "path";
 import { fileURLToPath } from "url";
 import runtimeErrorModal from "@replit/vite-plugin-runtime-error-modal";
 import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
+import { visualizer } from "rollup-plugin-visualizer";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path3.dirname(__filename);
 var logger = createLogger();
@@ -4991,7 +4992,13 @@ var vite_config_default = defineConfig({
   customLogger: logger,
   plugins: [
     react(),
-    runtimeErrorModal()
+    runtimeErrorModal(),
+    splitVendorChunkPlugin(),
+    visualizer({
+      filename: "dist/stats.html",
+      gzipSize: true,
+      brotliSize: true
+    })
   ],
   optimizeDeps: {
     include: ["react", "react-dom"]
@@ -5016,14 +5023,13 @@ var vite_config_default = defineConfig({
   build: {
     outDir: path3.resolve(__dirname, "dist", "public"),
     emptyOutDir: true,
-    modulePreload: false,
+    // ENABLE modulePreload - this guarantees correct chunk loading order!
+    modulePreload: {
+      polyfill: true
+    },
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            return "vendor";
-          }
-        },
+        // Let splitVendorChunkPlugin handle vendor splitting intelligently
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]"
