@@ -164,7 +164,7 @@ export default function Terms() {
                     Privatnost Poruka
                   </h3>
                   <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                    Administrator ima pristup privatnim porukama na platformi radi bezbednosti, moderacije i poštovanja pravila. 
+                    Administrator može da reguliše poruke na platformi radi bezbednosti, moderacije i poštovanja pravila. 
                     Ova mera osigurava profesionalno i sigurno okruženje za sve korisnike, sprečava zloupotrebe sistema 
                     i omogućava adekvatnu podršku u slučaju sporova ili tehničkih problema.
                   </p>
