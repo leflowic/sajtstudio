@@ -43,11 +43,37 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'wouter'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
-          'vendor-animation': ['framer-motion'],
-          'vendor-query': ['@tanstack/react-query'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@radix-ui')) {
+              if (id.includes('dialog') || id.includes('dropdown') || id.includes('toast') || id.includes('popover')) {
+                return 'vendor-ui-overlay';
+              }
+              if (id.includes('select') || id.includes('checkbox') || id.includes('radio') || id.includes('switch')) {
+                return 'vendor-ui-forms';
+              }
+              return 'vendor-ui-base';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'vendor-query';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('@tiptap')) {
+              return 'vendor-editor';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-animation';
+            }
+            if (id.includes('react-dom') || id.includes('react/') || id.includes('react\\') || id.includes('scheduler') || id.includes('wouter')) {
+              return 'vendor-react';
+            }
+            return 'vendor-other';
+          }
         },
       },
     },
@@ -57,8 +83,13 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'],
+      },
+      mangle: {
+        safari10: true,
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     host: "0.0.0.0",

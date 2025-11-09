@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -13,23 +14,39 @@ import { Footer } from "@/components/layout/footer";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { HelmetProvider } from "react-helmet-async";
-import Home from "@/pages/home";
-import Terms from "@/pages/terms";
-import Team from "@/pages/team";
-import Contact from "@/pages/contact";
-import AuthPage from "@/pages/auth-page";
-import VerifyEmailPage from "@/pages/verify-email";
-import Giveaway from "@/pages/giveaway";
-import AdminPage from "@/pages/admin";
-import TermsOfUse from "@/pages/terms-of-use";
-import Settings from "@/pages/settings";
-import VideoSpots from "@/pages/video-spots";
-import Inbox from "@/pages/inbox";
-import NotFound from "@/pages/not-found";
-import MaintenancePage from "@/pages/maintenance";
-import NewsletterConfirmation from "@/pages/newsletter-confirmation";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
+
+const Home = lazy(() => import("@/pages/home"));
+const Terms = lazy(() => import("@/pages/terms"));
+const Team = lazy(() => import("@/pages/team"));
+const Contact = lazy(() => import("@/pages/contact"));
+const AuthPage = lazy(() => import("@/pages/auth-page"));
+const VerifyEmailPage = lazy(() => import("@/pages/verify-email"));
+const Giveaway = lazy(() => import("@/pages/giveaway"));
+const AdminPage = lazy(() => import("@/pages/admin"));
+const TermsOfUse = lazy(() => import("@/pages/terms-of-use"));
+const Settings = lazy(() => import("@/pages/settings"));
+const VideoSpots = lazy(() => import("@/pages/video-spots"));
+const Inbox = lazy(() => import("@/pages/inbox"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+const MaintenancePage = lazy(() => import("@/pages/maintenance"));
+const NewsletterConfirmation = lazy(() => import("@/pages/newsletter-confirmation"));
+
+const LazyHome = () => <Home />;
+const LazyTerms = () => <Terms />;
+const LazyTeam = () => <Team />;
+const LazyContact = () => <Contact />;
+const LazyVideoSpots = () => <VideoSpots />;
+const LazyAuthPage = () => <AuthPage />;
+const LazyVerifyEmailPage = () => <VerifyEmailPage />;
+const LazyNewsletterConfirmation = () => <NewsletterConfirmation />;
+const LazyTermsOfUse = () => <TermsOfUse />;
+const LazyGiveaway = () => <Giveaway />;
+const LazyInbox = () => <Inbox />;
+const LazyAdminPage = () => <AdminPage />;
+const LazySettings = () => <Settings />;
+const LazyNotFound = () => <NotFound />;
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -73,36 +90,42 @@ function Router() {
     <>
       <Header />
       <main className="min-h-[calc(100vh-200px)]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={shouldReduceMotion ? pageVariantsReduced : pageVariants}
-            transition={pageTransition}
-            className="w-full"
-          >
-            <Switch location={location}>
-              <Route path="/" component={Home} />
-              <Route path="/pravila" component={Terms} />
-              <Route path="/tim" component={Team} />
-              <Route path="/kontakt" component={Contact} />
-              <Route path="/projekti" component={VideoSpots} />
-              <Route path="/auth" component={AuthPage} />
-              <Route path="/prijava" component={AuthPage} />
-              <Route path="/registracija" component={AuthPage} />
-              <Route path="/verify-email" component={VerifyEmailPage} />
-              <Route path="/newsletter/potvrda/:token" component={NewsletterConfirmation} />
-              <Route path="/uslovi-koriscenja" component={TermsOfUse} />
-              <ProtectedRoute path="/giveaway" component={Giveaway} />
-              <ProtectedRoute path="/inbox" component={Inbox} />
-              <ProtectedRoute path="/admin" component={AdminPage} />
-              <ProtectedRoute path="/settings" component={Settings} />
-              <Route component={NotFound} />
-            </Switch>
-          </motion.div>
-        </AnimatePresence>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        }>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={shouldReduceMotion ? pageVariantsReduced : pageVariants}
+              transition={pageTransition}
+              className="w-full"
+            >
+              <Switch location={location}>
+                <Route path="/" component={LazyHome} />
+                <Route path="/pravila" component={LazyTerms} />
+                <Route path="/tim" component={LazyTeam} />
+                <Route path="/kontakt" component={LazyContact} />
+                <Route path="/projekti" component={LazyVideoSpots} />
+                <Route path="/auth" component={LazyAuthPage} />
+                <Route path="/prijava" component={LazyAuthPage} />
+                <Route path="/registracija" component={LazyAuthPage} />
+                <Route path="/verify-email" component={LazyVerifyEmailPage} />
+                <Route path="/newsletter/potvrda/:token" component={LazyNewsletterConfirmation} />
+                <Route path="/uslovi-koriscenja" component={LazyTermsOfUse} />
+                <ProtectedRoute path="/giveaway" component={LazyGiveaway} />
+                <ProtectedRoute path="/inbox" component={LazyInbox} />
+                <ProtectedRoute path="/admin" component={LazyAdminPage} />
+                <ProtectedRoute path="/settings" component={LazySettings} />
+                <Route component={LazyNotFound} />
+              </Switch>
+            </motion.div>
+          </AnimatePresence>
+        </Suspense>
       </main>
       <Footer />
     </>
