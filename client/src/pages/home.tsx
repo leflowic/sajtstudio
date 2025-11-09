@@ -405,7 +405,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-background">
+      <section className="py-20 lg:py-32 bg-background">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <FadeInWhenVisible>
             <div className="text-center mb-16">
