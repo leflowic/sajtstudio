@@ -211,7 +211,7 @@ export default function Team() {
                   transition={{ duration: 0.3 }}
                 >
                   <Card 
-                    className="overflow-hidden h-full shadow-lg hover:shadow-2xl transition-shadow"
+                    className="overflow-visible h-full hover-elevate active-elevate-2 cursor-pointer"
                     data-testid={`card-team-${member.alias.toLowerCase()}`}
                   >
                 <CardHeader className="flex flex-row items-start justify-between gap-4 flex-wrap space-y-0 pb-4">
@@ -331,7 +331,7 @@ export default function Team() {
           </div>
 
           <div className="mt-20 text-center">
-            <Card className="max-w-3xl mx-auto bg-primary/5 border-primary/20">
+            <Card className="max-w-3xl mx-auto bg-primary/5 border-primary/20 hover-elevate">
               <CardContent className="p-8">
                 <h2 className="text-2xl font-bold mb-4">Pridružite Se Našoj Kreativnoj Porodici</h2>
                 <p className="text-muted-foreground mb-6">

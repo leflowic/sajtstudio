@@ -86,6 +86,7 @@ export default function Giveaway() {
     onClientUploadComplete: async (files) => {
       if (files && files.length > 0) {
         const file = files[0];
+        if (!file) return;
         
         // Save project metadata to database
         const response = await apiRequest("POST", "/api/giveaway/projects", {
@@ -632,7 +633,7 @@ function ProjectCard({
   });
 
   return (
-    <Card className="overflow-hidden" data-testid={`card-project-${project.id}`}>
+    <Card className="overflow-visible hover-elevate active-elevate-2" data-testid={`card-project-${project.id}`}>
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">

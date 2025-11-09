@@ -235,7 +235,7 @@ export default function VideoSpots() {
                 
                 return (
                   <FadeInWhenVisible key={spot.id} delay={index * 0.1}>
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <Card className="overflow-visible hover-elevate active-elevate-2">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -266,15 +266,17 @@ export default function VideoSpots() {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {videoId ? (
-                          <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                            <iframe
-                              className="absolute top-0 left-0 w-full h-full rounded-lg"
-                              src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-                              title={spot.title}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                              allowFullScreen
-                              loading="lazy"
-                            />
+                          <div className="overflow-hidden rounded-lg">
+                            <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                              <iframe
+                                className="absolute top-0 left-0 w-full h-full"
+                                src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                                title={spot.title}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                                loading="lazy"
+                              />
+                            </div>
                           </div>
                         ) : (
                           <div className="bg-muted rounded-lg p-8 text-center">

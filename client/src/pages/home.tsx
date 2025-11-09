@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Music, Mic2, Video, ArrowRight, CheckCircle2, Headphones, Phone, Play } from "lucide-react";
+import { Music, Mic2, Video, ArrowRight, CheckCircle2, Headphones, Phone, Play, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -389,8 +389,9 @@ export default function Home() {
           </FadeInWhenVisible>
           
           <FadeInWhenVisible delay={0.2}>
-            <p className="text-xl mb-4 text-muted-foreground max-w-2xl mx-auto">
-              📨 Prijavite se na naš newsletter i budite prvi koji će saznati o novim projektima, promocijama i ekskluzivnim ponudama
+            <p className="text-xl mb-4 text-muted-foreground max-w-2xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+              <Mail className="w-5 h-5 text-primary" />
+              Prijavite se na naš newsletter i budite prvi koji će saznati o novim projektima, promocijama i ekskluzivnim ponudama
             </p>
             <p className="text-sm text-muted-foreground/70 mb-12 flex items-center justify-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />

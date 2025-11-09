@@ -147,7 +147,7 @@ export default function Zajednica() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <Card className={cn(isTopSong && "border-primary")}>
+                  <Card className={cn("hover-elevate active-elevate-2", isTopSong && "border-primary")}>
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex-1 space-y-1">
