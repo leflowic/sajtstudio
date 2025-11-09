@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { CommunityChat } from "@/components/community/CommunityChat";
 
 type PublicSong = {
   id: number;
@@ -212,6 +213,13 @@ export default function Zajednica() {
             })
           )}
         </div>
+
+        <Separator className="my-12" />
+
+        {/* Community Chat */}
+        <FadeInWhenVisible>
+          <CommunityChat />
+        </FadeInWhenVisible>
       </div>
     </>
   );

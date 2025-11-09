@@ -10,7 +10,9 @@ export type WebSocketMessage =
   | { type: 'new_message'; message: any }
   | { type: 'message_read'; conversationId: number; readBy: number }
   | { type: 'message_deleted'; messageId: number }
-  | { type: 'notification'; title: string; description?: string; variant?: 'default' | 'destructive' };
+  | { type: 'notification'; title: string; description?: string; variant?: 'default' | 'destructive' }
+  | { type: 'community-chat:new'; message: any }
+  | { type: 'community-chat:delete'; messageId: number };
 
 interface WebSocketContextType {
   isConnected: boolean;
