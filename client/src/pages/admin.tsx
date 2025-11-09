@@ -28,8 +28,13 @@ import {
 import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction, Send, Mail, Eye, Search, Download, UserPlus, FileText } from "lucide-react";
 import { format } from "date-fns";
 import type { User, CmsContent, InsertCmsContent } from "@shared/schema";
-import { RichTextEditor } from "@/components/RichTextEditor";
+import { lazy, Suspense } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Lazy load TipTap editor - only needed in Newsletter tab
+const RichTextEditor = lazy(() => 
+  import("@/components/RichTextEditor").then(module => ({ default: module.RichTextEditor }))
+);
 import { Separator } from "@/components/ui/separator";
 import { AvatarWithInitials } from "@/components/ui/avatar-with-initials";
 import { ContractsTab } from "@/components/admin/ContractsTab";
@@ -545,11 +550,17 @@ function NewsletterTab() {
           <div>
             <Label htmlFor="newsletter-content">Sadržaj</Label>
             <div className="mt-2">
-              <RichTextEditor
-                content={htmlContent}
-                onChange={setHtmlContent}
-                placeholder="Unesite sadržaj newsletter poruke..."
-              />
+              <Suspense fallback={
+                <div className="border rounded-md p-4 min-h-[200px] flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              }>
+                <RichTextEditor
+                  content={htmlContent}
+                  onChange={setHtmlContent}
+                  placeholder="Unesite sadržaj newsletter poruke..."
+                />
+              </Suspense>
             </div>
           </div>
           <div className="flex items-center justify-between pt-4">
