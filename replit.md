@@ -35,9 +35,12 @@ The website features a modern, responsive design using Tailwind CSS and shadcn/u
 ### System Design Choices
 - **Database**: PostgreSQL managed by Replit, utilizing Drizzle ORM for schema management.
 - **Performance**: Optimized for Core Web Vitals (LCP) through lazy loading, prioritized image fetching, async font loading, server compression, and Vite build optimizations.
+  - **Vite Build Configuration**: Uses `splitVendorChunkPlugin()` with `modulePreload: { polyfill: true }` to ensure proper chunk loading order and prevent React initialization errors. Vendor bundle optimized to ~446KB (down from 1.1MB).
+  - **Bundle Analysis**: Integrated `rollup-plugin-visualizer` for ongoing performance monitoring.
 - **Language**: All UI and content are primarily in Serbian.
 - **Security**: Implements case-insensitive email/username lookups, banned user authorization, robust password hashing (Node.js scrypt), and security measures for messaging.
 - **Messaging UI**: User's own messages appear on the left (gray/muted), other user's messages appear on the right (blue/primary).
+- **Deployment**: Production builds use Vite's default modulePreload system to guarantee correct chunk execution order. All routes use lazy loading for code splitting.
 
 ## External Dependencies
 - **PostgreSQL**: Replit managed database for all persistent data.
