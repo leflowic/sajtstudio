@@ -26,6 +26,8 @@ import {
   type AdminMessageAudit,
   type Contract,
   type InsertContract,
+  type Invoice,
+  type InsertInvoice,
   type PendingUser,
   type RegistrationAttempt,
   contactSubmissions,
@@ -45,6 +47,7 @@ import {
   messageReads,
   adminMessageAudit,
   contracts,
+  invoices,
   pendingUsers,
   registrationAttempts,
 } from "@shared/schema";
@@ -197,6 +200,29 @@ export interface IStorage {
   getContractById(id: number): Promise<Contract | undefined>;
   getNextContractNumber(): Promise<string>;
   deleteContract(id: number): Promise<void>;
+
+  // Invoices
+  createInvoice(data: InsertInvoice): Promise<Invoice>;
+  getAllInvoices(): Promise<Invoice[]>;
+  getUserInvoices(userId: number): Promise<Array<Invoice & { contractNumber: string | null; contractType: string | null }>>;
+  getInvoiceById(id: number): Promise<Invoice | undefined>;
+  updateInvoiceStatus(id: number, status: string, paidDate?: Date): Promise<void>;
+  deleteInvoice(id: number): Promise<void>;
+
+  // Dashboard
+  getUserProjects(userId: number): Promise<Array<Project & { username: string }>>;
+  getUserContracts(userId: number): Promise<Array<Contract & { username: string }>>;
+  getDashboardOverview(userId: number): Promise<{
+    totalProjects: number;
+    projectsByStatus: Record<string, number>;
+    totalContracts: number;
+    totalInvoices: number;
+    pendingInvoices: number;
+    overdueInvoices: number;
+    totalAmountPending: string;
+    unreadMessages: number;
+  }>;
+  updateProjectStatus(projectId: number, status: string): Promise<void>;
 
   // Analytics
   getNewUsersCount(period: 'today' | 'week' | 'month'): Promise<number>;
@@ -1647,6 +1673,211 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContract(id: number): Promise<void> {
     await db.delete(contracts).where(eq(contracts.id, id));
+  }
+
+  // Invoices
+  async createInvoice(data: InsertInvoice): Promise<Invoice> {
+    const [invoice] = await db.insert(invoices).values(data).returning();
+    if (!invoice) throw new Error("Failed to create invoice");
+    return invoice;
+  }
+
+  async getAllInvoices(): Promise<Invoice[]> {
+    return await db.select().from(invoices).orderBy(desc(invoices.createdAt));
+  }
+
+  async getUserInvoices(userId: number): Promise<Array<Invoice & { contractNumber: string | null; contractType: string | null }>> {
+    const results = await db
+      .select({
+        id: invoices.id,
+        userId: invoices.userId,
+        contractId: invoices.contractId,
+        invoiceNumber: invoices.invoiceNumber,
+        amount: invoices.amount,
+        currency: invoices.currency,
+        status: invoices.status,
+        description: invoices.description,
+        issuedDate: invoices.issuedDate,
+        dueDate: invoices.dueDate,
+        paidDate: invoices.paidDate,
+        contractNumber: contracts.contractNumber,
+        contractType: contracts.contractType,
+      })
+      .from(invoices)
+      .leftJoin(contracts, eq(invoices.contractId, contracts.id))
+      .where(eq(invoices.userId, userId))
+      .orderBy(desc(invoices.dueDate));
+    
+    return results.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      contractId: r.contractId,
+      invoiceNumber: r.invoiceNumber,
+      amount: r.amount,
+      currency: r.currency,
+      status: r.status,
+      description: r.description,
+      issuedDate: r.issuedDate,
+      dueDate: r.dueDate,
+      paidDate: r.paidDate,
+      contractNumber: r.contractNumber,
+      contractType: r.contractType,
+    }));
+  }
+
+  async getInvoiceById(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice || undefined;
+  }
+
+  async updateInvoiceStatus(id: number, status: string, paidDate?: Date): Promise<void> {
+    await db
+      .update(invoices)
+      .set({ status: status as any, paidDate: paidDate || null })
+      .where(eq(invoices.id, id));
+  }
+
+  async deleteInvoice(id: number): Promise<void> {
+    await db.delete(invoices).where(eq(invoices.id, id));
+  }
+
+  // Dashboard
+  async getUserProjects(userId: number): Promise<Array<Project & { username: string }>> {
+    const results = await db
+      .select({
+        id: projects.id,
+        userId: projects.userId,
+        title: projects.title,
+        description: projects.description,
+        genre: projects.genre,
+        mp3Url: projects.mp3Url,
+        uploadDate: projects.uploadDate,
+        currentMonth: projects.currentMonth,
+        approved: projects.approved,
+        status: projects.status,
+        username: users.username,
+      })
+      .from(projects)
+      .leftJoin(users, eq(projects.userId, users.id))
+      .where(eq(projects.userId, userId))
+      .orderBy(desc(projects.uploadDate));
+    
+    return results.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      title: r.title,
+      description: r.description,
+      genre: r.genre,
+      mp3Url: r.mp3Url,
+      uploadDate: r.uploadDate,
+      currentMonth: r.currentMonth,
+      approved: r.approved,
+      status: r.status,
+      username: r.username || "Unknown",
+    }));
+  }
+
+  async getUserContracts(userId: number): Promise<Array<Contract & { username: string }>> {
+    // Get user to match contracts by email
+    const user = await this.getUser(userId);
+    if (!user) return [];
+    
+    // Get contracts where user's email matches contractData.clientEmail using JOIN
+    const results = await db
+      .select({
+        id: contracts.id,
+        contractNumber: contracts.contractNumber,
+        contractType: contracts.contractType,
+        clientEmail: contracts.clientEmail,
+        pdfPath: contracts.pdfPath,
+        contractData: contracts.contractData,
+        createdAt: contracts.createdAt,
+        username: users.username,
+      })
+      .from(contracts)
+      .leftJoin(users, eq(contracts.clientEmail, users.email))
+      .where(eq(contracts.clientEmail, user.email))
+      .orderBy(desc(contracts.createdAt));
+    
+    return results.map(r => ({
+      id: r.id,
+      contractNumber: r.contractNumber,
+      contractType: r.contractType,
+      clientEmail: r.clientEmail,
+      pdfPath: r.pdfPath,
+      contractData: r.contractData,
+      createdAt: r.createdAt,
+      username: r.username || "Unknown",
+    }));
+  }
+
+  async getDashboardOverview(userId: number): Promise<{
+    totalProjects: number;
+    projectsByStatus: Record<string, number>;
+    totalContracts: number;
+    totalInvoices: number;
+    pendingInvoices: number;
+    overdueInvoices: number;
+    totalAmountPending: string;
+    unreadMessages: number;
+  }> {
+    // Get all user projects
+    const userProjects = await this.getUserProjects(userId);
+    
+    // Count projects by status
+    const projectsByStatus = userProjects.reduce((acc, project) => {
+      const status = project.status || 'waiting';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get user contracts
+    const userContracts = await this.getUserContracts(userId);
+
+    // Get user invoices with dynamic overdue status
+    const userInvoices = await db
+      .select({
+        id: invoices.id,
+        status: invoices.status,
+        amount: invoices.amount,
+        dueDate: invoices.dueDate,
+        isOverdue: sql<boolean>`${invoices.dueDate} < now() AND ${invoices.status} = 'pending'`,
+      })
+      .from(invoices)
+      .where(eq(invoices.userId, userId));
+
+    // Count invoices
+    const pendingInvoices = userInvoices.filter(inv => 
+      inv.status === 'pending' && !inv.isOverdue
+    ).length;
+    const overdueInvoices = userInvoices.filter(inv => inv.isOverdue).length;
+
+    // Calculate total amount pending (including overdue)
+    const totalAmountPending = userInvoices
+      .filter(inv => inv.status === 'pending' || inv.isOverdue)
+      .reduce((sum, inv) => sum + parseFloat(inv.amount || '0'), 0)
+      .toFixed(2);
+
+    // Get unread message count
+    const unreadMessages = await this.getUnreadMessageCount(userId);
+
+    return {
+      totalProjects: userProjects.length,
+      projectsByStatus,
+      totalContracts: userContracts.length,
+      totalInvoices: userInvoices.length,
+      pendingInvoices,
+      overdueInvoices,
+      totalAmountPending,
+      unreadMessages,
+    };
+  }
+
+  async updateProjectStatus(projectId: number, status: string): Promise<void> {
+    await db
+      .update(projects)
+      .set({ status: status as any })
+      .where(eq(projects.id, projectId));
   }
 
   // Analytics

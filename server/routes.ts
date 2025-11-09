@@ -2045,6 +2045,86 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
+  // ===== DASHBOARD ENDPOINTS =====
+  
+  // Get dashboard overview for logged-in user
+  app.get("/api/dashboard/overview", requireVerifiedEmail, async (req, res) => {
+    try {
+      const overview = await storage.getDashboardOverview(req.user!.id);
+      res.json(overview);
+    } catch (error: any) {
+      console.error("[DASHBOARD] Get overview error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju dashboard pregleda" });
+    }
+  });
+
+  // Get user's projects
+  app.get("/api/user/projects", requireVerifiedEmail, async (req, res) => {
+    try {
+      const projects = await storage.getUserProjects(req.user!.id);
+      res.json(projects);
+    } catch (error: any) {
+      console.error("[DASHBOARD] Get user projects error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju projekata" });
+    }
+  });
+
+  // Get user's contracts
+  app.get("/api/user/contracts", requireVerifiedEmail, async (req, res) => {
+    try {
+      const contracts = await storage.getUserContracts(req.user!.id);
+      res.json(contracts);
+    } catch (error: any) {
+      console.error("[DASHBOARD] Get user contracts error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju ugovora" });
+    }
+  });
+
+  // Get user's invoices
+  app.get("/api/user/invoices", requireVerifiedEmail, async (req, res) => {
+    try {
+      const invoices = await storage.getUserInvoices(req.user!.id);
+      res.json(invoices);
+    } catch (error: any) {
+      console.error("[DASHBOARD] Get user invoices error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju faktura" });
+    }
+  });
+
+  // Update project status (admin only)
+  app.put("/api/admin/projects/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (isNaN(projectId)) {
+        return res.status(400).json({ error: "Nevažeći ID projekta" });
+      }
+
+      if (!status || !['waiting', 'in_progress', 'completed', 'cancelled'].includes(status)) {
+        return res.status(400).json({ error: "Nevažeći status. Dozvoljeni: waiting, in_progress, completed, cancelled" });
+      }
+
+      await storage.updateProjectStatus(projectId, status);
+      
+      // Get project info for notification
+      const project = await storage.getProject(projectId);
+      if (project) {
+        // Notify the user about status change
+        notifyUser(
+          project.userId,
+          "Status projekta ažuriran",
+          `Status vašeg projekta "${project.title}" je promenjen na: ${status}`
+        );
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[ADMIN] Update project status error:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju statusa projekta" });
+    }
+  });
+
   // ===== ADMIN MESSAGING ENDPOINTS =====
   
   // Get all conversations (admin only)

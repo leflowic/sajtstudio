@@ -24,6 +24,7 @@ const Contact = lazy(() => import("@/pages/contact"));
 const AuthPage = lazy(() => import("@/pages/auth-page"));
 const VerifyEmailPage = lazy(() => import("@/pages/verify-email"));
 const Giveaway = lazy(() => import("@/pages/giveaway"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
 const AdminPage = lazy(() => import("@/pages/admin"));
 const TermsOfUse = lazy(() => import("@/pages/terms-of-use"));
 const Settings = lazy(() => import("@/pages/settings"));
@@ -45,6 +46,7 @@ const LazyVerifyEmailPage = () => <VerifyEmailPage />;
 const LazyNewsletterConfirmation = () => <NewsletterConfirmation />;
 const LazyTermsOfUse = () => <TermsOfUse />;
 const LazyGiveaway = () => <Giveaway />;
+const LazyDashboard = () => <Dashboard />;
 const LazyInbox = () => <Inbox />;
 const LazyMojePesme = () => <MojePesme />;
 const LazyZajednica = () => <Zajednica />;
@@ -125,6 +127,7 @@ function Router() {
                 <ProtectedRoute path="/giveaway" component={LazyGiveaway} />
                 <ProtectedRoute path="/moje-pesme" component={LazyMojePesme} />
                 <ProtectedRoute path="/inbox" component={LazyInbox} />
+                <ProtectedRoute path="/dashboard" component={LazyDashboard} />
                 <ProtectedRoute path="/admin" component={LazyAdminPage} />
                 <ProtectedRoute path="/settings" component={LazySettings} />
                 <Route component={LazyNotFound} />

@@ -1,8 +1,12 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, serial, integer, boolean, unique, json, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, serial, integer, boolean, unique, json, index, pgEnum, numeric } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Enums for type-safe status fields
+export const projectStatusEnum = pgEnum("project_status", ["waiting", "in_progress", "completed", "cancelled"]);
+export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "paid", "overdue", "cancelled"]);
 
 // Session table - managed by connect-pg-simple for express-session
 export const session = pgTable("session", {
@@ -102,7 +106,7 @@ export const projects = pgTable("projects", {
   votesCount: integer("votes_count").notNull().default(0),
   currentMonth: text("current_month").notNull(), // e.g., "2025-01" to track monthly limit
   approved: boolean("approved").notNull().default(false), // Admin must approve before project is visible
-  status: text("status").notNull().default("waiting"), // "waiting" | "in_progress" | "completed" | "cancelled"
+  status: projectStatusEnum("status").notNull().default("waiting"),
 });
 
 // Votes table - for upvoting projects
@@ -676,10 +680,11 @@ export const invoices = pgTable("invoices", {
   invoiceNumber: varchar("invoice_number", { length: 20 }).notNull().unique(),
   contractId: integer("contract_id").references(() => contracts.id), // Optional: link to contract
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Client who receives the invoice
-  amount: text("amount").notNull(), // Amount as string to preserve decimal formatting
-  currency: varchar("currency", { length: 3 }).notNull().default("RSD"), // ISO currency code
-  status: text("status").notNull().default("pending"), // "pending" | "paid" | "overdue" | "cancelled"
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(), // Numeric for aggregations
+  currency: varchar("currency", { length: 3 }).notNull().default("RSD"), // ISO currency code (RSD, EUR)
+  status: invoiceStatusEnum("status").notNull().default("pending"),
   description: text("description").notNull(), // What the invoice is for
+  notes: text("notes"), // Optional additional notes
   issuedDate: timestamp("issued_date").defaultNow().notNull(),
   dueDate: timestamp("due_date").notNull(), // Payment deadline
   paidDate: timestamp("paid_date"), // When payment was received
@@ -700,10 +705,11 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   issuedDate: true,
 }).extend({
   invoiceNumber: z.string().min(1, "Broj fakture je obavezan"),
-  amount: z.string().min(1, "Iznos je obavezan"),
-  currency: z.string().length(3, "Valuta mora biti 3 karaktera (npr. RSD, EUR)").default("RSD"),
+  amount: z.coerce.number().nonnegative("Iznos mora biti pozitivan broj"),
+  currency: z.enum(["RSD", "EUR"]).default("RSD"),
   status: z.enum(["pending", "paid", "overdue", "cancelled"]).default("pending"),
   description: z.string().min(1, "Opis je obavezan"),
+  notes: z.string().optional().nullable(),
   dueDate: z.date().or(z.string()),
   paidDate: z.date().or(z.string()).optional().nullable(),
 });
