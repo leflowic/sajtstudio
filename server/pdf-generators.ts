@@ -166,7 +166,7 @@ function drawContractLogo(doc: PDFKit.PDFDocument): number {
       .font('DejaVuSans')
       .fillColor('#666666');
     
-    const infoY = headerTop + 70; // Position below logo
+    const infoY = headerTop + 95; // Position below logo to avoid overlap
     doc.text('Studio LeFlow | Beograd, Srbija', leftMargin, infoY, {
       width: pageWidth - leftMargin - rightMargin,
       align: 'center'
@@ -345,9 +345,6 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.fontSize(10).font('DejaVuSans');
     doc.text('____________________________', 100, doc.y, { continued: true, width: 200 });
     doc.text('____________________________', 320, doc.y - doc.currentLineHeight(), { width: 200 });
-    doc.moveDown(0.3);
-    doc.text('Pružalac usluge', 100, doc.y, { continued: true, width: 200 });
-    doc.text('Naručilac usluge', 320, doc.y - doc.currentLineHeight(), { width: 200 });
     doc.moveDown(2);
     doc.text(`Datum: ${data.finalDate}`, { align: 'center' });
 
@@ -654,9 +651,6 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
     doc.fontSize(10).font('DejaVuSans');
     doc.text('____________________________', 100, doc.y, { continued: true, width: 200 });
     doc.text('____________________________', 320, doc.y - doc.currentLineHeight(), { width: 200 });
-    doc.moveDown(0.3);
-    doc.text('Izdavač licence (Studio)', 100, doc.y, { continued: true, width: 200 });
-    doc.text('Korisnik licence', 320, doc.y - doc.currentLineHeight(), { width: 200 });
     doc.moveDown(2);
     doc.text(`Datum izdavanja: ${data.finalDate}`, { align: 'center' });
 
