@@ -86,6 +86,7 @@ function Router() {
           <div key={location} className="w-full page-transition">
             <Switch location={location}>
                 <Route path="/" component={LazyHome} />
+                <Route path="/terms" component={LazyTerms} />
                 <Route path="/pravila" component={LazyTerms} />
                 <Route path="/tim" component={LazyTeam} />
                 <Route path="/kontakt" component={LazyContact} />
