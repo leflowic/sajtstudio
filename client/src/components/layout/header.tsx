@@ -84,7 +84,7 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           <Link 
             href="/"
-            className="flex items-center gap-2 hover-elevate rounded-lg px-3 py-2 -ml-3" 
+            className="flex items-center gap-2 rounded-lg px-3 py-2 -ml-3 transition-opacity hover:opacity-80" 
             data-testid="link-logo"
           >
             <img 
