@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { wsHelpers, notifyUser, getOnlineUsersSnapshot } from "./websocket-helpers";
-import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, insertUserSongSchema, insertNewsletterSubscriberSchema, mixMasterContractDataSchema, copyrightTransferContractDataSchema, instrumentalSaleContractDataSchema, type CmsContent, type CmsMedia, type VideoSpot, type UserSong } from "@shared/schema";
+import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, insertUserSongSchema, insertNewsletterSubscriberSchema, insertInvoiceSchema, mixMasterContractDataSchema, copyrightTransferContractDataSchema, instrumentalSaleContractDataSchema, type CmsContent, type CmsMedia, type VideoSpot, type UserSong } from "@shared/schema";
 import { sendEmail, getLastVerificationCode } from "./resend-client";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import multer from "multer";
@@ -2532,6 +2532,36 @@ Sitemap: ${siteUrl}/sitemap.xml
     }
   });
 
+  // Assign contract to user
+  app.patch("/api/admin/contracts/:id/assign-user", requireAdmin, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.id);
+      const { userId } = req.body;
+
+      if (isNaN(contractId)) {
+        return res.status(400).json({ error: "Nevažeći ID ugovora" });
+      }
+
+      if (!userId || isNaN(parseInt(userId))) {
+        return res.status(400).json({ error: "userId je obavezan" });
+      }
+
+      // Check if user exists
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+
+      // Update contract userId
+      await storage.updateContractUser(contractId, parseInt(userId));
+
+      res.json({ success: true, message: "Ugovor uspešno dodeljen korisniku" });
+    } catch (error: any) {
+      console.error("[CONTRACTS] Assign user error:", error);
+      res.status(500).json({ error: "Greška pri dodeljivanju ugovora" });
+    }
+  });
+
   // Delete contract
   app.delete("/api/admin/contracts/:id", requireAdmin, async (req, res) => {
     try {
@@ -2561,6 +2591,88 @@ Sitemap: ${siteUrl}/sitemap.xml
     } catch (error: any) {
       console.error("[CONTRACTS] Delete error:", error);
       res.status(500).json({ error: "Greška pri brisanju ugovora" });
+    }
+  });
+
+  // ============================================================================
+  // INVOICE MANAGEMENT ENDPOINTS (Admin only)
+  // ============================================================================
+
+  // Create invoice
+  app.post("/api/admin/invoices", requireAdmin, async (req, res) => {
+    try {
+      // Generate invoice number (will be done automatically in storage)
+      const invoiceNumber = await storage.getNextInvoiceNumber();
+      
+      // Validate and prepare invoice data
+      const invoiceData = insertInvoiceSchema.parse({
+        ...req.body,
+        invoiceNumber,
+        createdBy: req.user!.id,
+        currency: req.body.currency || "RSD",
+        status: req.body.status || "pending",
+      });
+
+      const invoice = await storage.createInvoice(invoiceData);
+      res.json(invoice);
+    } catch (error: any) {
+      console.error("[INVOICES] Create error:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Nevažeći podaci", details: error.errors });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju fakture" });
+    }
+  });
+
+  // Get all invoices
+  app.get("/api/admin/invoices", requireAdmin, async (req, res) => {
+    try {
+      const invoices = await storage.getAllInvoices();
+      res.json(invoices);
+    } catch (error: any) {
+      console.error("[INVOICES] Get all error:", error);
+      res.status(500).json({ error: "Greška pri učitavanju faktura" });
+    }
+  });
+
+  // Update invoice status
+  app.patch("/api/admin/invoices/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Nevažeći ID fakture" });
+      }
+
+      if (!status || !["pending", "paid", "cancelled"].includes(status)) {
+        return res.status(400).json({ error: "Nevažeći status fakture" });
+      }
+
+      const paidDate = status === "paid" ? new Date() : undefined;
+      await storage.updateInvoiceStatus(invoiceId, status, paidDate);
+
+      res.json({ success: true, message: "Status fakture ažuriran" });
+    } catch (error: any) {
+      console.error("[INVOICES] Update status error:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju statusa fakture" });
+    }
+  });
+
+  // Delete invoice
+  app.delete("/api/admin/invoices/:id", requireAdmin, async (req, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Nevažeći ID fakture" });
+      }
+
+      await storage.deleteInvoice(invoiceId);
+      res.json({ success: true, message: "Faktura uspešno obrisana" });
+    } catch (error: any) {
+      console.error("[INVOICES] Delete error:", error);
+      res.status(500).json({ error: "Greška pri brisanju fakture" });
     }
   });
 

@@ -199,6 +199,7 @@ export interface IStorage {
   getAllContracts(): Promise<Contract[]>;
   getContractById(id: number): Promise<Contract | undefined>;
   getNextContractNumber(): Promise<string>;
+  updateContractUser(contractId: number, userId: number): Promise<void>;
   deleteContract(id: number): Promise<void>;
 
   // Invoices
@@ -206,6 +207,7 @@ export interface IStorage {
   getAllInvoices(): Promise<Invoice[]>;
   getUserInvoices(userId: number): Promise<Array<Invoice & { contractNumber: string | null; contractType: string | null }>>;
   getInvoiceById(id: number): Promise<Invoice | undefined>;
+  getNextInvoiceNumber(): Promise<string>;
   updateInvoiceStatus(id: number, status: string, paidDate?: Date): Promise<void>;
   deleteInvoice(id: number): Promise<void>;
 
@@ -1671,15 +1673,52 @@ export class DatabaseStorage implements IStorage {
     return `${nextNumber.toString().padStart(3, '0')}/${yearSuffix}`;
   }
 
+  async updateContractUser(contractId: number, userId: number): Promise<void> {
+    await db.update(contracts).set({ userId }).where(eq(contracts.id, contractId));
+  }
+
   async deleteContract(id: number): Promise<void> {
     await db.delete(contracts).where(eq(contracts.id, id));
   }
 
+  // Get next invoice number
+  async getNextInvoiceNumber(): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const yearPrefix = `INV-${currentYear}`;
+    
+    // Get the latest invoice for this year (format: INV-YYYY-NNN)
+    const [latestInvoice] = await db
+      .select()
+      .from(invoices)
+      .where(sql`${invoices.invoiceNumber} LIKE ${yearPrefix + '-%'}`)
+      .orderBy(desc(invoices.invoiceNumber))
+      .limit(1);
+
+    if (!latestInvoice) {
+      return `${yearPrefix}-001`;
+    }
+
+    // Extract number from format "INV-YYYY-NNN"
+    const parts = latestInvoice.invoiceNumber.split('-');
+    if (parts.length < 3 || !parts[2]) {
+      return `${yearPrefix}-001`;
+    }
+    
+    const lastNumber = parseInt(parts[2]);
+    const nextNumber = lastNumber + 1;
+    
+    return `${yearPrefix}-${nextNumber.toString().padStart(3, '0')}`;
+  }
+
   // Invoices
   async createInvoice(data: InsertInvoice): Promise<Invoice> {
+    // Generate invoice number if not provided
+    const invoiceNumber = data.invoiceNumber || await this.getNextInvoiceNumber();
+    
     // Convert amount to string for numeric column and dates to Date objects
     const invoiceData = {
       ...data,
+      invoiceNumber,
       amount: typeof data.amount === 'number' ? data.amount.toString() : data.amount,
       dueDate: typeof data.dueDate === 'string' ? new Date(data.dueDate) : data.dueDate,
       paidDate: data.paidDate ? (typeof data.paidDate === 'string' ? new Date(data.paidDate) : data.paidDate) : null,

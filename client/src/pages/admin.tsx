@@ -183,7 +183,7 @@ export default function AdminPage() {
 
         <Tabs defaultValue="dashboard" className="w-full" data-testid="tabs-admin">
           <div className="mb-8 overflow-x-auto">
-            <TabsList className="inline-flex lg:grid lg:grid-cols-9 w-full lg:w-full" data-testid="tabs-list-admin">
+            <TabsList className="inline-flex lg:grid lg:grid-cols-10 w-full lg:w-full" data-testid="tabs-list-admin">
               <TabsTrigger value="dashboard" data-testid="tab-dashboard" className="whitespace-nowrap">Dashboard</TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users" className="whitespace-nowrap">Korisnici</TabsTrigger>
               <TabsTrigger value="projects" data-testid="tab-projects" className="whitespace-nowrap">Projekti</TabsTrigger>
@@ -191,6 +191,7 @@ export default function AdminPage() {
               <TabsTrigger value="newsletter" data-testid="tab-newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
               <TabsTrigger value="messages" data-testid="tab-messages" className="whitespace-nowrap">Poruke</TabsTrigger>
               <TabsTrigger value="contracts" data-testid="tab-contracts" className="whitespace-nowrap">Ugovori</TabsTrigger>
+              <TabsTrigger value="invoices" data-testid="tab-invoices" className="whitespace-nowrap">Fakture</TabsTrigger>
               <TabsTrigger value="cms" data-testid="tab-cms" className="whitespace-nowrap">CMS</TabsTrigger>
               <TabsTrigger value="settings" data-testid="tab-settings" className="whitespace-nowrap">Podešavanja</TabsTrigger>
             </TabsList>
@@ -222,6 +223,10 @@ export default function AdminPage() {
 
           <TabsContent value="contracts">
             <ContractsTab />
+          </TabsContent>
+
+          <TabsContent value="invoices">
+            <InvoicesTab />
           </TabsContent>
 
           <TabsContent value="cms">
@@ -2317,5 +2322,306 @@ function TeamPageCMS() {
         </Button>
       </div>
     </form>
+  );
+}
+
+// ============================================================================
+// INVOICES TAB
+// ============================================================================
+
+function InvoicesTab() {
+  const { toast } = useToast();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  // Fetch all invoices
+  const { data: invoices = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/invoices"],
+  });
+
+  // Fetch all users for dropdown
+  const { data: users = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/users"],
+  });
+
+  // Create invoice mutation
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/admin/invoices", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
+      toast({
+        title: "Uspeh",
+        description: "Faktura uspešno kreirana",
+      });
+      setShowCreateForm(false);
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Greška pri kreiranju fakture",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update invoice status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      return apiRequest("PATCH", `/api/admin/invoices/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
+      toast({
+        title: "Uspeh",
+        description: "Status fakture ažuriran",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Greška pri ažuriranju statusa",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete invoice mutation
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/admin/invoices/${id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invoices"] });
+      toast({
+        title: "Uspeh",
+        description: "Faktura obrisana",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Greška pri brisanju fakture",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateInvoice = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      userId: parseInt(formData.get("userId") as string),
+      amount: parseFloat(formData.get("amount") as string),
+      currency: formData.get("currency") as string || "RSD",
+      description: formData.get("description") as string,
+      dueDate: formData.get("dueDate") as string,
+      notes: formData.get("notes") as string || "",
+    };
+    createInvoiceMutation.mutate(data);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold" data-testid="heading-invoices">Fakture</h2>
+          <p className="text-muted-foreground">Kreiranje i upravljanje fakturama</p>
+        </div>
+        <Button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          data-testid="button-toggle-invoice-form"
+        >
+          {showCreateForm ? "Zatvori Formu" : "Kreiraj Fakturu"}
+        </Button>
+      </div>
+
+      {showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nova Faktura</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateInvoice} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="userId">Korisnik *</Label>
+                  <select
+                    id="userId"
+                    name="userId"
+                    required
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    data-testid="select-invoice-user"
+                  >
+                    <option value="">Izaberite korisnika</option>
+                    {users.map((user: any) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="amount">Iznos *</Label>
+                  <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    required
+                    data-testid="input-invoice-amount"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="currency">Valuta *</Label>
+                  <select
+                    id="currency"
+                    name="currency"
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    data-testid="select-invoice-currency"
+                  >
+                    <option value="RSD">RSD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="dueDate">Rok Plaćanja *</Label>
+                  <Input
+                    id="dueDate"
+                    name="dueDate"
+                    type="date"
+                    required
+                    data-testid="input-invoice-due-date"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="description">Opis *</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  required
+                  rows={3}
+                  data-testid="textarea-invoice-description"
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Napomene</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  rows={2}
+                  data-testid="textarea-invoice-notes"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={createInvoiceMutation.isPending}
+                data-testid="button-submit-invoice"
+              >
+                {createInvoiceMutation.isPending ? "Kreiranje..." : "Kreiraj Fakturu"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista Faktura ({invoices.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Broj</th>
+                  <th className="text-left p-2">Korisnik</th>
+                  <th className="text-left p-2">Iznos</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Rok</th>
+                  <th className="text-left p-2">Akcije</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center p-4 text-muted-foreground">
+                      Nema faktura
+                    </td>
+                  </tr>
+                ) : (
+                  invoices.map((invoice: any) => (
+                    <tr key={invoice.id} className="border-b" data-testid={`row-invoice-${invoice.id}`}>
+                      <td className="p-2">{invoice.invoiceNumber}</td>
+                      <td className="p-2">ID: {invoice.userId}</td>
+                      <td className="p-2">
+                        {invoice.amount} {invoice.currency}
+                      </td>
+                      <td className="p-2">
+                        <Badge
+                          variant={
+                            invoice.status === "paid"
+                              ? "default"
+                              : invoice.status === "overdue"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          data-testid={`badge-invoice-status-${invoice.id}`}
+                        >
+                          {invoice.status}
+                        </Badge>
+                      </td>
+                      <td className="p-2">
+                        {new Date(invoice.dueDate).toLocaleDateString("sr-RS")}
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          {invoice.status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                updateStatusMutation.mutate({ id: invoice.id, status: "paid" })
+                              }
+                              disabled={updateStatusMutation.isPending}
+                              data-testid={`button-mark-paid-${invoice.id}`}
+                            >
+                              Označi kao Plaćeno
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              if (confirm("Da li ste sigurni?")) {
+                                deleteInvoiceMutation.mutate(invoice.id);
+                              }
+                            }}
+                            disabled={deleteInvoiceMutation.isPending}
+                            data-testid={`button-delete-invoice-${invoice.id}`}
+                          >
+                            Obriši
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
