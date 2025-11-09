@@ -1166,6 +1166,102 @@ function GiveawaySettingsSection() {
   );
 }
 
+function SiteAnnouncementCard() {
+  const { toast } = useToast();
+  const [isActive, setIsActive] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const { data: announcement, isLoading } = useQuery<{ isActive: boolean; message: string }>({
+    queryKey: ['/api/announcement'],
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: { isActive: boolean; message: string }) => {
+      return await apiRequest("PATCH", "/api/announcement", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/announcement'] });
+      toast({
+        title: "Uspeh",
+        description: "Obaveštenje je sačuvano",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Greška pri čuvanju obaveštenja",
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (announcement) {
+      setIsActive(announcement.isActive || false);
+      setMessage(announcement.message || "");
+    }
+  }, [announcement]);
+
+  const handleSave = () => {
+    updateMutation.mutate({ isActive, message });
+  };
+
+  if (isLoading) {
+    return <Skeleton className="h-48" />;
+  }
+
+  return (
+    <Card data-testid="card-site-announcement">
+      <CardHeader>
+        <CardTitle>Obaveštenje na Sajtu</CardTitle>
+        <CardDescription>Prikažite važne informacije na početnoj strani</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="announcement-active" className="text-base">
+              Aktiviraj obaveštenje
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Prikaži obaveštenje na početnoj strani
+            </p>
+          </div>
+          <Switch
+            id="announcement-active"
+            checked={isActive}
+            onCheckedChange={setIsActive}
+            disabled={updateMutation.isPending}
+            data-testid="switch-announcement"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="announcement-message">Poruka obaveštenja</Label>
+          <Textarea
+            id="announcement-message"
+            placeholder="Unesite poruku obaveštenja..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={3}
+            className="resize-none"
+            disabled={updateMutation.isPending}
+            data-testid="textarea-announcement"
+          />
+        </div>
+
+        <Button
+          onClick={handleSave}
+          disabled={updateMutation.isPending || !message.trim()}
+          className="w-full"
+          data-testid="button-save-announcement"
+        >
+          {updateMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function DashboardTab() {
   const { toast } = useToast();
 
@@ -1240,6 +1336,8 @@ function DashboardTab() {
           </div>
         </CardContent>
       </Card>
+
+      <SiteAnnouncementCard />
 
       <div>
         <h3 className="text-lg font-semibold mb-4">Aktivnost</h3>

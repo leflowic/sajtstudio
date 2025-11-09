@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Music, Mic2, Video, ArrowRight, CheckCircle2, Headphones, Phone, Play, Mail } from "lucide-react";
+import { Music, Mic2, Video, ArrowRight, CheckCircle2, Headphones, Phone, Play, Mail, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { FadeInWhenVisible } from "@/components/motion/FadeIn";
@@ -29,6 +30,10 @@ export default function Home() {
       // Ensure we always return an array
       return Array.isArray(data) ? data : [];
     },
+  });
+
+  const { data: announcement } = useQuery<{ isActive: boolean; message: string }>({
+    queryKey: ['/api/announcement'],
   });
 
   // Handle hash navigation for services section
@@ -154,6 +159,16 @@ export default function Home() {
           }
         }}
       />
+      
+      {announcement?.isActive && announcement.message && (
+        <Alert variant="destructive" className="rounded-none border-x-0" data-testid="alert-site-announcement">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            {announcement.message}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <OptimizedImage 
