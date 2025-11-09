@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -689,7 +689,10 @@ export default function AuthPage() {
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm font-normal cursor-pointer">
-                            Prihvatam da administrator ima pristup privatnim porukama u svrhu bezbednosti i moderacije, i saglasan sam sa uslovima korišćenja platforme.
+                            Potvrđujem da sam pročitao i prihvatam naše{" "}
+                            <Link href="/terms" className="text-primary underline hover:text-primary/80" data-testid="link-terms">
+                              Uslove korišćenja
+                            </Link>
                           </FormLabel>
                           <FormMessage />
                         </div>
@@ -725,11 +728,11 @@ export default function AuthPage() {
           </div>
           
           <h2 className="text-4xl lg:text-5xl font-bold tracking-tight font-[Montserrat] max-w-2xl mx-auto">
-            Studio LeFlow Community
+            Studio LeFlow Platforma
           </h2>
           
           <p className="text-xl lg:text-2xl max-w-lg mx-auto leading-relaxed text-white/90">
-            Pridružite se zajednici muzičkih producenata. Učestvujte u mesečnim giveaway konkursima i osvajajte besplatne studio termine.
+            Centralno mesto za produkciju, kolaboraciju i isporuku muzike – rezervišite studio, delite projekte, učestvujte u giveaway konkursima i pratite revizije u jednom profesionalnom okruženju.
           </p>
         </div>
       </div>
