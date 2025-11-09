@@ -54,6 +54,7 @@ export function Header() {
   const navigation = [
     { name: "Početna", href: "/" },
     { name: "Giveaway", href: "/giveaway" },
+    { name: "Zajednica", href: "/zajednica" },
     { name: "Pravila", href: "/pravila" },
     { name: "Tim", href: "/tim" },
     { name: "Projekti", href: "/projekti" },
