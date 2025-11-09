@@ -113,7 +113,7 @@ export default function Contact() {
           "studio rezervacija online"
         ]}
       />
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="mb-8">
           <Link href="/">
             <Button variant="ghost" data-testid="button-back-home">

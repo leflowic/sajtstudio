@@ -165,7 +165,7 @@ export default function Home() {
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/65 to-black/65" />
         
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 py-20 text-center">
           <motion.div 
             className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30"
             initial={{ opacity: 0, y: -20 }}
@@ -258,7 +258,7 @@ export default function Home() {
       </section>
 
       <section className="py-20 lg:py-32 bg-background" id="usluge">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight" data-testid="text-services-title">
               Naše Usluge
@@ -323,7 +323,7 @@ export default function Home() {
       </section>
 
       <section className="py-20 lg:py-32 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <FadeInWhenVisible>
               <motion.div
@@ -383,7 +383,7 @@ export default function Home() {
       </section>
 
       <section className="py-20 lg:py-32 bg-gradient-to-br from-primary/5 to-primary/10">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
           <FadeInWhenVisible>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
               Budite u Toku sa Najnovijim Novostima
@@ -403,7 +403,7 @@ export default function Home() {
       </section>
 
       <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
           <FadeInWhenVisible>
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
@@ -504,7 +504,7 @@ export default function Home() {
       </section>
 
       <section className="py-20 lg:py-32 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
           <FadeInWhenVisible>
             <EditableText
               page="home"

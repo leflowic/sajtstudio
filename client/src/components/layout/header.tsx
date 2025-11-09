@@ -86,11 +86,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
           <Link 
             href="/"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 -ml-3 transition-opacity hover:opacity-80" 
+            className="flex items-center gap-1.5 md:gap-2 rounded-lg px-2 md:px-3 py-2 -ml-2 md:-ml-3 transition-opacity hover:opacity-80" 
             data-testid="link-logo"
           >
             <img 
@@ -98,9 +98,9 @@ export function Header() {
               alt="Studio LeFlow Logo" 
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
-              className="h-10 w-auto dark:invert transition-all select-none"
+              className="h-8 md:h-10 w-auto dark:invert transition-all select-none"
             />
-            <span className="text-xl font-bold font-[Montserrat] uppercase">STUDIO LEFLOW</span>
+            <span className="text-sm sm:text-base md:text-xl font-bold font-[Montserrat] uppercase">STUDIO LEFLOW</span>
           </Link>
 
           <nav className="hidden xl:flex items-center gap-0.5 ml-8">

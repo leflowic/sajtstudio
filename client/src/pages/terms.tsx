@@ -73,7 +73,7 @@ export default function Terms() {
 
   return (
     <div className="min-h-screen py-12 lg:py-20">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-5xl mx-auto px-4 md:px-6">
         <FadeIn delay={0.1}>
           <div className="mb-8">
             <Link href="/">

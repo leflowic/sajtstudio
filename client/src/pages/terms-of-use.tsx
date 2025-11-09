@@ -6,7 +6,7 @@ import { ArrowLeft, Shield, AlertTriangle, FileText, Scale, Megaphone } from "lu
 export default function TermsOfUsePage() {
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-4 md:px-6">
         <Link href="/giveaway" data-testid="link-back-giveaway">
           <Button variant="ghost" className="mb-8" data-testid="button-back">
             <ArrowLeft className="w-4 h-4 mr-2" />

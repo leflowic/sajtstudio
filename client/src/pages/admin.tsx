@@ -161,10 +161,10 @@ export default function AdminPage() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background py-12">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="min-h-screen bg-background py-8 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
           <Skeleton className="h-12 w-64 mb-2" />
-          <Skeleton className="h-6 w-96 mb-8" />
+          <Skeleton className="h-6 w-full max-w-96 mb-8" />
           <Skeleton className="h-96 w-full" />
         </div>
       </div>
@@ -177,18 +177,18 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" data-testid="heading-admin-panel">Admin Panel</h1>
-          <p className="text-muted-foreground" data-testid="text-admin-description">
+    <div className="min-h-screen bg-background py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2" data-testid="heading-admin-panel">Admin Panel</h1>
+          <p className="text-sm md:text-base text-muted-foreground" data-testid="text-admin-description">
             Upravljanje korisnicima, projektima i komentarima
           </p>
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full" data-testid="tabs-admin">
-          <div className="mb-8 overflow-x-auto">
-            <TabsList className="inline-flex lg:grid lg:grid-cols-10 w-full lg:w-full" data-testid="tabs-list-admin">
+          <div className="mb-6 md:mb-8 overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+            <TabsList className="inline-flex lg:grid lg:grid-cols-10 min-w-max lg:w-full" data-testid="tabs-list-admin">
               <TabsTrigger value="dashboard" data-testid="tab-dashboard" className="whitespace-nowrap">Dashboard</TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users" className="whitespace-nowrap">Korisnici</TabsTrigger>
               <TabsTrigger value="projects" data-testid="tab-projects" className="whitespace-nowrap">Projekti</TabsTrigger>
