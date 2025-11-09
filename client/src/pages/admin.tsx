@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction, Send, Mail, Eye, Search, Download, UserPlus, FileText } from "lucide-react";
+import { Users, Music, Heart, MessageCircle, Trash2, Shield, ShieldOff, Settings, Construction, Send, Mail, Eye, Search, Download, UserPlus, FileText, Crown, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import type { User, CmsContent, InsertCmsContent } from "@shared/schema";
 import { lazy, Suspense } from "react";
@@ -38,6 +38,13 @@ const RichTextEditor = lazy(() =>
 import { Separator } from "@/components/ui/separator";
 import { AvatarWithInitials } from "@/components/ui/avatar-with-initials";
 import { ContractsTab } from "@/components/admin/ContractsTab";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AdminStats {
   totalUsers: number;
@@ -1482,6 +1489,26 @@ function UsersTab() {
     },
   });
 
+  const updateRankMutation = useMutation({
+    mutationFn: async ({ userId, rank }: { userId: number; rank: string }) => {
+      await apiRequest("PATCH", `/api/users/${userId}/rank`, { rank });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Uspeh",
+        description: "Rank je uspešno ažuriran",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri ažuriranju rank-a",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -1506,6 +1533,7 @@ function UsersTab() {
                 <TableHead data-testid="header-username">Korisničko Ime</TableHead>
                 <TableHead data-testid="header-email">Email</TableHead>
                 <TableHead data-testid="header-role">Uloga</TableHead>
+                <TableHead data-testid="header-rank">Rank</TableHead>
                 <TableHead data-testid="header-status">Status</TableHead>
                 <TableHead data-testid="header-created">Kreiran</TableHead>
                 <TableHead data-testid="header-actions">Akcije</TableHead>
@@ -1520,6 +1548,55 @@ function UsersTab() {
                     <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} data-testid={`badge-role-${user.id}`}>
                       {user.role}
                     </Badge>
+                  </TableCell>
+                  <TableCell data-testid={`cell-rank-${user.id}`}>
+                    <Select
+                      value={user.rank}
+                      onValueChange={(rank) => updateRankMutation.mutate({ userId: user.id, rank })}
+                      disabled={updateRankMutation.isPending}
+                    >
+                      <SelectTrigger className="w-[140px]" data-testid={`select-rank-${user.id}`}>
+                        <SelectValue>
+                          <div className="flex items-center gap-2">
+                            {user.rank === 'legend' && <Trophy className="h-3 w-3 text-yellow-500" />}
+                            {user.rank === 'vip' && <Crown className="h-3 w-3 text-blue-500" />}
+                            {user.rank === 'admin' && <Shield className="h-3 w-3 text-destructive" />}
+                            <span className={
+                              user.rank === 'vip' ? 'text-blue-500' :
+                              user.rank === 'legend' ? 'text-yellow-500' :
+                              user.rank === 'admin' ? 'text-destructive' :
+                              'text-muted-foreground'
+                            }>
+                              {user.rank === 'user' ? 'User' : 
+                               user.rank === 'vip' ? 'VIP' : 
+                               user.rank === 'legend' ? 'Legend' : 
+                               'Admin'}
+                            </span>
+                          </div>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="vip">
+                          <div className="flex items-center gap-2">
+                            <Crown className="h-3 w-3 text-blue-500" />
+                            <span className="text-blue-500">VIP</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="legend">
+                          <div className="flex items-center gap-2">
+                            <Trophy className="h-3 w-3 text-yellow-500" />
+                            <span className="text-yellow-500">Legend</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-3 w-3 text-destructive" />
+                            <span className="text-destructive">Admin</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell data-testid={`cell-status-${user.id}`}>
                     {user.banned && (
