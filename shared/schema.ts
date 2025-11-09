@@ -428,6 +428,7 @@ export const insertUserSongSchema = createInsertSchema(userSongs).omit({
   userId: true,
   submittedAt: true,
   approved: true,
+  votesCount: true,
 }).extend({
   songTitle: z.string().min(3, "Naslov pesme mora imati najmanje 3 karaktera").max(100, "Naslov pesme može imati najviše 100 karaktera"),
   artistName: z.string().min(2, "Ime izvođača mora imati najmanje 2 karaktera").max(100, "Ime izvođača može imati najviše 100 karaktera"),
