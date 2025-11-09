@@ -30,6 +30,8 @@ import {
   type InsertInvoice,
   type PendingUser,
   type RegistrationAttempt,
+  type CommunityMessage,
+  type InsertCommunityMessage,
   contactSubmissions,
   users,
   projects,
@@ -50,6 +52,7 @@ import {
   invoices,
   pendingUsers,
   registrationAttempts,
+  communityMessages,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, sql } from "drizzle-orm";
@@ -211,6 +214,13 @@ export interface IStorage {
   getNextInvoiceNumber(): Promise<string>;
   updateInvoiceStatus(id: number, status: string, paidDate?: Date): Promise<void>;
   deleteInvoice(id: number): Promise<void>;
+
+  // Community Chat
+  createCommunityMessage(userId: number, message: string): Promise<CommunityMessage>;
+  getCommunityMessages(limit?: number): Promise<Array<CommunityMessage & { username: string; rank: string; avatarUrl: string | null }>>;
+  deleteCommunityMessage(messageId: number, userId: number): Promise<boolean>;
+  canUserSendMessage(userId: number): Promise<boolean>;
+  updateUserRank(userId: number, rank: string): Promise<void>;
 
   // Dashboard
   getUserProjects(userId: number): Promise<Array<Project & { username: string }>>;
@@ -2092,6 +2102,153 @@ export class DatabaseStorage implements IStorage {
       ));
 
     return result[0]?.count || 0;
+  }
+
+  // Community Chat
+  async canUserSendMessage(userId: number): Promise<boolean> {
+    try {
+      const [lastMessage] = await db
+        .select()
+        .from(communityMessages)
+        .where(eq(communityMessages.userId, userId))
+        .orderBy(desc(communityMessages.createdAt))
+        .limit(1);
+
+      if (!lastMessage) {
+        return true;
+      }
+
+      const result = await db
+        .select({ 
+          canSend: sql<boolean>`NOW() - INTERVAL '10 seconds' >= ${lastMessage.createdAt}` 
+        })
+        .from(communityMessages)
+        .limit(1);
+
+      return result[0]?.canSend ?? true;
+    } catch (error) {
+      console.error('Error checking message rate limit:', error);
+      return false;
+    }
+  }
+
+  async createCommunityMessage(userId: number, message: string): Promise<CommunityMessage> {
+    try {
+      const canSend = await this.canUserSendMessage(userId);
+      
+      if (!canSend) {
+        throw new Error('Možete slati poruke samo jednom na 10 sekundi');
+      }
+
+      const [newMessage] = await db
+        .insert(communityMessages)
+        .values({ userId, message })
+        .returning();
+
+      if (!newMessage) {
+        throw new Error('Failed to create community message');
+      }
+
+      return newMessage;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to create community message');
+    }
+  }
+
+  async getCommunityMessages(limit?: number): Promise<Array<CommunityMessage & { username: string; rank: string; avatarUrl: string | null }>> {
+    try {
+      const effectiveLimit = Math.min(limit || 100, 200);
+
+      const results = await db
+        .select({
+          id: communityMessages.id,
+          userId: communityMessages.userId,
+          message: communityMessages.message,
+          createdAt: communityMessages.createdAt,
+          username: users.username,
+          rank: users.rank,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(communityMessages)
+        .leftJoin(users, eq(communityMessages.userId, users.id))
+        .orderBy(desc(communityMessages.createdAt))
+        .limit(effectiveLimit);
+
+      return results.map(r => ({
+        id: r.id,
+        userId: r.userId,
+        message: r.message,
+        createdAt: r.createdAt,
+        username: r.username || 'Unknown',
+        rank: r.rank || 'user',
+        avatarUrl: r.avatarUrl,
+      }));
+    } catch (error) {
+      console.error('Error fetching community messages:', error);
+      return [];
+    }
+  }
+
+  async deleteCommunityMessage(messageId: number, userId: number): Promise<boolean> {
+    try {
+      // Get the message to check ownership
+      const [message] = await db
+        .select()
+        .from(communityMessages)
+        .where(eq(communityMessages.id, messageId));
+
+      if (!message) {
+        return false; // Message not found
+      }
+
+      // Get user to check if admin
+      const user = await this.getUser(userId);
+      if (!user) {
+        return false; // User not found
+      }
+
+      // Check if user is owner or admin
+      const isOwner = message.userId === userId;
+      const isAdmin = user.role === 'admin';
+
+      if (!isOwner && !isAdmin) {
+        return false; // Not authorized
+      }
+
+      // Delete the message
+      const result = await db
+        .delete(communityMessages)
+        .where(eq(communityMessages.id, messageId))
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting community message:', error);
+      return false;
+    }
+  }
+
+  async updateUserRank(userId: number, rank: string): Promise<void> {
+    try {
+      const validRanks = ['user', 'vip', 'legend', 'admin'];
+      
+      if (!validRanks.includes(rank)) {
+        throw new Error('Nevažeći rank');
+      }
+
+      await db
+        .update(users)
+        .set({ rank: rank as any })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update user rank');
+    }
   }
 }
 
