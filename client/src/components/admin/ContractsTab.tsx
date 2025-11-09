@@ -156,7 +156,7 @@ export function ContractsTab() {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="pt-8">
+                <div className="pt-12">
                   <TabsContent value="mix_master">
                     <MixMasterForm onSubmit={(data) => generateMutation.mutate({ contractType: "mix_master", contractData: data })} isSubmitting={generateMutation.isPending} />
                   </TabsContent>
