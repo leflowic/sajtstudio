@@ -148,6 +148,22 @@ export const videoSpots = pgTable("video_spots", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// User Songs table - for user-submitted YouTube songs (protected section)
+export const userSongs = pgTable("user_songs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  songTitle: text("song_title").notNull(),
+  artistName: text("artist_name").notNull(),
+  youtubeUrl: text("youtube_url").notNull().unique(), // Duplicate protection
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  approved: boolean("approved").notNull().default(false), // Admin must approve
+}, (table) => ({
+  // Index for efficient rate limiting queries (find user's last submission)
+  userSubmittedIdx: index("user_songs_user_submitted_idx").on(table.userId, table.submittedAt),
+  // Index for fetching approved songs
+  approvedIdx: index("user_songs_approved_idx").on(table.approved),
+}));
+
 // Newsletter Subscribers table - for email subscriptions
 export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: serial("id").primaryKey(),
@@ -390,6 +406,20 @@ export const insertVideoSpotSchema = createInsertSchema(videoSpots).omit({
 
 export type InsertVideoSpot = z.infer<typeof insertVideoSpotSchema>;
 export type VideoSpot = typeof videoSpots.$inferSelect;
+
+export const insertUserSongSchema = createInsertSchema(userSongs).omit({
+  id: true,
+  userId: true,
+  submittedAt: true,
+  approved: true,
+}).extend({
+  songTitle: z.string().min(3, "Naslov pesme mora imati najmanje 3 karaktera").max(100, "Naslov pesme može imati najviše 100 karaktera"),
+  artistName: z.string().min(2, "Ime izvođača mora imati najmanje 2 karaktera").max(100, "Ime izvođača može imati najviše 100 karaktera"),
+  youtubeUrl: z.string().url("Unesite validan YouTube URL").regex(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//, "URL mora biti sa YouTube-a"),
+});
+
+export type InsertUserSong = z.infer<typeof insertUserSongSchema>;
+export type UserSong = typeof userSongs.$inferSelect;
 
 // Newsletter Subscribers schemas
 export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({

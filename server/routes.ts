@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { wsHelpers } from "./websocket-helpers";
-import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, insertNewsletterSubscriberSchema, mixMasterContractDataSchema, copyrightTransferContractDataSchema, instrumentalSaleContractDataSchema, type CmsContent, type CmsMedia, type VideoSpot } from "@shared/schema";
+import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, insertUserSongSchema, insertNewsletterSubscriberSchema, mixMasterContractDataSchema, copyrightTransferContractDataSchema, instrumentalSaleContractDataSchema, type CmsContent, type CmsMedia, type VideoSpot, type UserSong } from "@shared/schema";
 import { sendEmail, getLastVerificationCode } from "./resend-client";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import multer from "multer";
@@ -1531,6 +1531,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateVideoSpotOrder(id, order);
       res.json(updated);
     } catch (error) {
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // ============================================================================
+  // USER SONGS ENDPOINTS (User-submitted YouTube songs with 36h rate limit)
+  // ============================================================================
+
+  // POST /api/user-songs - PROTECTED (create new user song with rate limiting)
+  app.post("/api/user-songs", requireVerifiedEmail, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      // 1. Validate input
+      const validated = insertUserSongSchema.parse(req.body);
+      
+      // 2. Check 36-hour rate limit
+      const lastSubmissionTime = await storage.getUserLastSongSubmissionTime(userId);
+      if (lastSubmissionTime) {
+        const hoursSinceLastSubmission = (Date.now() - lastSubmissionTime.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastSubmission < 36) {
+          const hoursRemaining = Math.ceil(36 - hoursSinceLastSubmission);
+          return res.status(429).json({ 
+            error: `Možete postaviti novu pesmu za ${hoursRemaining} ${hoursRemaining === 1 ? 'sat' : hoursRemaining < 5 ? 'sata' : 'sati'}`,
+            hoursRemaining 
+          });
+        }
+      }
+      
+      // 3. Create song (duplicate URL check is handled by DB unique constraint)
+      const newSong = await storage.createUserSong({
+        userId,
+        songTitle: validated.songTitle,
+        artistName: validated.artistName,
+        youtubeUrl: validated.youtubeUrl,
+      });
+      
+      res.json(newSong);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      }
+      // Check for duplicate YouTube URL error
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        return res.status(409).json({ error: "Ova pesma je već postavljena" });
+      }
+      console.error("Error creating user song:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // GET /api/user-songs - PROTECTED (get current user's songs)
+  app.get("/api/user-songs", requireVerifiedEmail, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const songs = await storage.getUserSongs(userId);
+      res.json(songs);
+    } catch (error) {
+      console.error("Error fetching user songs:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // GET /api/user-songs/all - ADMIN (get all user songs with usernames)
+  app.get("/api/user-songs/all", requireAdmin, async (req, res) => {
+    try {
+      const songs = await storage.getAllUserSongs();
+      res.json(songs);
+    } catch (error) {
+      console.error("Error fetching all user songs:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // DELETE /api/user-songs/:id - PROTECTED (delete own song)
+  app.delete("/api/user-songs/:id", requireVerifiedEmail, async (req, res) => {
+    try {
+      const songId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+      
+      if (isNaN(songId)) {
+        return res.status(400).json({ error: "Nevažeći ID" });
+      }
+      
+      // Verify ownership before deletion (admins can delete any)
+      if (!isAdmin) {
+        const song = await storage.getUserSongById(songId);
+        if (!song) {
+          return res.status(404).json({ error: "Pesma nije pronađena" });
+        }
+        if (song.userId !== userId) {
+          return res.status(403).json({ error: "Nemate dozvolu da obrišete ovu pesmu" });
+        }
+      }
+      
+      await storage.deleteUserSong(songId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user song:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // POST /api/user-songs/:id/approve - ADMIN (approve a song)
+  app.post("/api/user-songs/:id/approve", requireAdmin, async (req, res) => {
+    try {
+      const songId = parseInt(req.params.id);
+      
+      if (isNaN(songId)) {
+        return res.status(400).json({ error: "Nevažeći ID" });
+      }
+      
+      await storage.approveUserSong(songId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error approving user song:", error);
       res.status(500).json({ error: "Greška na serveru" });
     }
   });

@@ -16,6 +16,8 @@ import {
   type InsertCmsMedia,
   type VideoSpot,
   type InsertVideoSpot,
+  type UserSong,
+  type InsertUserSong,
   type NewsletterSubscriber,
   type InsertNewsletterSubscriber,
   type Conversation,
@@ -33,6 +35,7 @@ import {
   cmsContent,
   cmsMedia,
   videoSpots,
+  userSongs,
   newsletterSubscribers,
   conversations,
   messages,
@@ -136,6 +139,15 @@ export interface IStorage {
   updateVideoSpot(id: number, data: InsertVideoSpot): Promise<VideoSpot>;
   deleteVideoSpot(id: number): Promise<void>;
   updateVideoSpotOrder(id: number, order: number): Promise<VideoSpot>;
+
+  // User Songs (User-submitted YouTube songs)
+  createUserSong(data: { userId: number; songTitle: string; artistName: string; youtubeUrl: string }): Promise<UserSong>;
+  getUserSongById(id: number): Promise<UserSong | undefined>;
+  getUserSongs(userId: number): Promise<UserSong[]>;
+  getAllUserSongs(): Promise<Array<UserSong & { username: string }>>;
+  deleteUserSong(id: number): Promise<void>;
+  approveUserSong(id: number): Promise<void>;
+  getUserLastSongSubmissionTime(userId: number): Promise<Date | null>;
 
   // Messaging
   searchUsers(query: string, currentUserId: number): Promise<Array<{ id: number; username: string; email: string }>>;
@@ -812,6 +824,80 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!result) throw new Error("Video spot not found");
     return result;
+  }
+
+  // User Songs
+  async createUserSong(data: { userId: number; songTitle: string; artistName: string; youtubeUrl: string }): Promise<UserSong> {
+    const [result] = await db
+      .insert(userSongs)
+      .values({
+        userId: data.userId,
+        songTitle: data.songTitle,
+        artistName: data.artistName,
+        youtubeUrl: data.youtubeUrl,
+      })
+      .returning();
+    return result!;
+  }
+
+  async getUserSongById(id: number): Promise<UserSong | undefined> {
+    const [result] = await db
+      .select()
+      .from(userSongs)
+      .where(eq(userSongs.id, id));
+    return result || undefined;
+  }
+
+  async getUserSongs(userId: number): Promise<UserSong[]> {
+    return await db
+      .select()
+      .from(userSongs)
+      .where(eq(userSongs.userId, userId))
+      .orderBy(desc(userSongs.submittedAt));
+  }
+
+  async getAllUserSongs(): Promise<Array<UserSong & { username: string }>> {
+    const results = await db
+      .select({
+        id: userSongs.id,
+        userId: userSongs.userId,
+        songTitle: userSongs.songTitle,
+        artistName: userSongs.artistName,
+        youtubeUrl: userSongs.youtubeUrl,
+        submittedAt: userSongs.submittedAt,
+        approved: userSongs.approved,
+        username: users.username,
+      })
+      .from(userSongs)
+      .leftJoin(users, eq(userSongs.userId, users.id))
+      .orderBy(desc(userSongs.submittedAt));
+    
+    return results.map(r => ({
+      ...r,
+      username: r.username || 'Unknown',
+    }));
+  }
+
+  async deleteUserSong(id: number): Promise<void> {
+    await db.delete(userSongs).where(eq(userSongs.id, id));
+  }
+
+  async approveUserSong(id: number): Promise<void> {
+    await db
+      .update(userSongs)
+      .set({ approved: true })
+      .where(eq(userSongs.id, id));
+  }
+
+  async getUserLastSongSubmissionTime(userId: number): Promise<Date | null> {
+    const [result] = await db
+      .select({ submittedAt: userSongs.submittedAt })
+      .from(userSongs)
+      .where(eq(userSongs.userId, userId))
+      .orderBy(desc(userSongs.submittedAt))
+      .limit(1);
+    
+    return result?.submittedAt || null;
   }
 
   // Admin methods

@@ -650,8 +650,14 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
     doc.text('Korišćenjem instrumentala, Korisnik potvrđuje da prihvata sve uslove navedene u ovoj licenci.');
     doc.moveDown(3);
 
-    // Datum izdavanja
+    // Signatures
     doc.fontSize(10).font('DejaVuSans');
+    doc.text('____________________________', 100, doc.y, { continued: true, width: 200 });
+    doc.text('____________________________', 320, doc.y - doc.currentLineHeight(), { width: 200 });
+    doc.moveDown(0.3);
+    doc.text('Izdavač licence (Studio)', 100, doc.y, { continued: true, width: 200 });
+    doc.text('Korisnik licence', 320, doc.y - doc.currentLineHeight(), { width: 200 });
+    doc.moveDown(2);
     doc.text(`Datum izdavanja: ${data.finalDate}`, { align: 'center' });
 
     doc.end();
