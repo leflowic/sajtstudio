@@ -188,11 +188,12 @@ export default function AdminPage() {
 
         <Tabs defaultValue="dashboard" className="w-full" data-testid="tabs-admin">
           <div className="mb-6 md:mb-8 overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
-            <TabsList className="inline-flex lg:grid lg:grid-cols-10 min-w-max lg:w-full" data-testid="tabs-list-admin">
+            <TabsList className="inline-flex lg:grid lg:grid-cols-11 min-w-max lg:w-full" data-testid="tabs-list-admin">
               <TabsTrigger value="dashboard" data-testid="tab-dashboard" className="whitespace-nowrap">Dashboard</TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users" className="whitespace-nowrap">Korisnici</TabsTrigger>
               <TabsTrigger value="projects" data-testid="tab-projects" className="whitespace-nowrap">Projekti</TabsTrigger>
               <TabsTrigger value="comments" data-testid="tab-comments" className="whitespace-nowrap">Komentari</TabsTrigger>
+              <TabsTrigger value="user-songs" data-testid="tab-user-songs" className="whitespace-nowrap">Zajednica</TabsTrigger>
               <TabsTrigger value="newsletter" data-testid="tab-newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
               <TabsTrigger value="messages" data-testid="tab-messages" className="whitespace-nowrap">Poruke</TabsTrigger>
               <TabsTrigger value="contracts" data-testid="tab-contracts" className="whitespace-nowrap">Ugovori</TabsTrigger>
@@ -216,6 +217,10 @@ export default function AdminPage() {
 
           <TabsContent value="comments">
             <CommentsTab />
+          </TabsContent>
+
+          <TabsContent value="user-songs">
+            <UserSongsTab />
           </TabsContent>
 
           <TabsContent value="newsletter">
@@ -1868,6 +1873,231 @@ function ProjectsTab() {
           </Card>
         )}
       </div>
+    </div>
+  );
+}
+
+interface UserSongWithDetails {
+  id: number;
+  userId: number;
+  username: string;
+  songTitle: string;
+  artistName: string;
+  youtubeUrl: string;
+  submittedAt: string;
+  approved: boolean;
+  votesCount: number;
+}
+
+function UserSongsTab() {
+  const { toast } = useToast();
+
+  const { data: songs, isLoading } = useQuery<UserSongWithDetails[]>({
+    queryKey: ["/api/user-songs/all"],
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (songId: number) => {
+      await apiRequest("POST", `/api/user-songs/${songId}/approve`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user-songs/all"] });
+      toast({
+        title: "Uspeh",
+        description: "Pesma je odobrena",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Greška pri odobravanju pesme",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (songId: number) => {
+      await apiRequest("DELETE", `/api/user-songs/${songId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user-songs/all"] });
+      toast({
+        title: "Uspeh",
+        description: "Pesma je obrisana",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Greška pri brisanju pesme",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-40" data-testid={`skeleton-song-${i}`} />
+        ))}
+      </div>
+    );
+  }
+
+  const pendingSongs = songs?.filter(s => !s.approved) || [];
+  const approvedSongs = songs?.filter(s => s.approved) || [];
+
+  return (
+    <div className="space-y-6" data-testid="content-user-songs">
+      {/* Pending Songs Section */}
+      {pendingSongs.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4" data-testid="heading-pending-songs">
+            Pesme na Čekanju ({pendingSongs.length})
+          </h3>
+          <div className="space-y-4">
+            {pendingSongs.map((song) => (
+              <Card key={song.id} data-testid={`card-song-${song.id}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-base" data-testid={`title-song-${song.id}`}>
+                          {song.songTitle}
+                        </CardTitle>
+                        <Badge variant="secondary" data-testid={`status-song-${song.id}`}>
+                          Na čekanju
+                        </Badge>
+                      </div>
+                      <CardDescription data-testid={`artist-song-${song.id}`}>
+                        {song.artistName}
+                      </CardDescription>
+                      <p className="text-xs text-muted-foreground" data-testid={`user-song-${song.id}`}>
+                        Poslao: {song.username}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => approveMutation.mutate(song.id)}
+                        disabled={approveMutation.isPending}
+                        data-testid={`button-approve-song-${song.id}`}
+                      >
+                        Odobri
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(song.id)}
+                        disabled={deleteMutation.isPending}
+                        data-testid={`button-delete-song-${song.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <a
+                      href={song.youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                      data-testid={`link-youtube-${song.id}`}
+                    >
+                      <Music className="h-3 w-3" />
+                      Otvori na YouTube
+                    </a>
+                    <p className="text-xs text-muted-foreground" data-testid={`time-song-${song.id}`}>
+                      Poslato: {format(new Date(song.submittedAt), "dd.MM.yyyy HH:mm")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Approved Songs Section */}
+      {approvedSongs.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4" data-testid="heading-approved-songs">
+            Odobrene Pesme ({approvedSongs.length})
+          </h3>
+          <div className="space-y-4">
+            {approvedSongs.map((song) => (
+              <Card key={song.id} data-testid={`card-approved-song-${song.id}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-base" data-testid={`title-approved-song-${song.id}`}>
+                          {song.songTitle}
+                        </CardTitle>
+                        <Badge variant="default" data-testid={`status-approved-song-${song.id}`}>
+                          Odobreno
+                        </Badge>
+                        <Badge variant="secondary" className="flex items-center gap-1" data-testid={`votes-song-${song.id}`}>
+                          <Heart className="h-3 w-3" />
+                          {song.votesCount} glasova
+                        </Badge>
+                      </div>
+                      <CardDescription data-testid={`artist-approved-song-${song.id}`}>
+                        {song.artistName}
+                      </CardDescription>
+                      <p className="text-xs text-muted-foreground" data-testid={`user-approved-song-${song.id}`}>
+                        Poslao: {song.username}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(song.id)}
+                      disabled={deleteMutation.isPending}
+                      data-testid={`button-delete-approved-song-${song.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <a
+                      href={song.youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                      data-testid={`link-youtube-approved-${song.id}`}
+                    >
+                      <Music className="h-3 w-3" />
+                      Otvori na YouTube
+                    </a>
+                    <p className="text-xs text-muted-foreground" data-testid={`time-approved-song-${song.id}`}>
+                      Poslato: {format(new Date(song.submittedAt), "dd.MM.yyyy HH:mm")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No Songs */}
+      {songs?.length === 0 && (
+        <Card data-testid="card-no-songs">
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground" data-testid="text-no-songs">
+              Nema poslanih pesama
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
