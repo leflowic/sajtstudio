@@ -33,6 +33,9 @@ Thumbs.db
 *.swo
 *~
 
+# Replit internal state
+.local/
+
 # Testing
 coverage/
 
