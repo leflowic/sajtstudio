@@ -645,7 +645,7 @@ function MixMasterForm({ onSubmit, isSubmitting }: { onSubmit: (data: any) => vo
 
       <div className="space-y-4">
         <h3 className="font-semibold">Finansije</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Ukupna Naknada (RSD)</Label>
             <Input type="number" value={formData.totalAmount} onChange={(e) => handleChange("totalAmount", e.target.value)} data-testid="input-total-amount" required />
@@ -658,7 +658,7 @@ function MixMasterForm({ onSubmit, isSubmitting }: { onSubmit: (data: any) => vo
             <Label>Ostatak (auto)</Label>
             <Input type="number" value={formData.remainingPayment} readOnly className="bg-muted" data-testid="input-remaining-payment" />
           </div>
-          <div className="space-y-2 col-span-3">
+          <div className="space-y-2">
             <Label>Način Plaćanja</Label>
             <Input value={formData.paymentMethod} onChange={(e) => handleChange("paymentMethod", e.target.value)} data-testid="input-payment-method" />
           </div>
@@ -1099,7 +1099,7 @@ function InstrumentalSaleForm({ onSubmit, isSubmitting }: { onSubmit: (data: any
 
       <div className="space-y-4">
         <h3 className="font-semibold">Finansije</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Ukupna Naknada (RSD)</Label>
             <Input type="number" value={formData.totalAmount} onChange={(e) => handleChange("totalAmount", e.target.value)} data-testid="input-total-amount-instrumental" required />
@@ -1112,7 +1112,7 @@ function InstrumentalSaleForm({ onSubmit, isSubmitting }: { onSubmit: (data: any
             <Label>Ostatak (auto)</Label>
             <Input type="number" value={formData.remainingPayment} readOnly className="bg-muted" data-testid="input-remaining-payment-instrumental" />
           </div>
-          <div className="space-y-2 col-span-3">
+          <div className="space-y-2">
             <Label>Način Plaćanja</Label>
             <Input value={formData.paymentMethod} onChange={(e) => handleChange("paymentMethod", e.target.value)} data-testid="input-payment-method-instrumental" />
           </div>
