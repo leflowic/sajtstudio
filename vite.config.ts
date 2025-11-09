@@ -49,11 +49,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // React core - CRITICAL: Must load first
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'vendor-react';
-          }
-          // Everything else vendor in one bundle to avoid ordering issues
+          // Single vendor bundle - NO splitting to avoid chunk ordering issues
           if (id.includes('node_modules')) {
             return 'vendor';
           }
