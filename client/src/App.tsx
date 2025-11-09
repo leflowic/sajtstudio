@@ -15,6 +15,7 @@ import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { HelmetProvider } from "react-helmet-async";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 const Home = lazy(() => import("@/pages/home"));
 const Terms = lazy(() => import("@/pages/terms"));
@@ -122,6 +123,7 @@ function App() {
               <EditModeProvider>
                 <TooltipProvider>
                   <Toaster />
+                  <InstallPrompt />
                   <Router />
                 </TooltipProvider>
               </EditModeProvider>
