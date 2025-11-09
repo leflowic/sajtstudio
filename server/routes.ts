@@ -1932,6 +1932,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE /api/community-chat/clear - Clear all community messages (ADMIN only)
+  // NOTE: This route MUST come BEFORE /:id to avoid "clear" being matched as an ID
+  app.delete("/api/community-chat/clear", requireAdmin, async (req, res) => {
+    try {
+      await storage.clearAllCommunityMessages();
+      
+      // Broadcast clear to all online users
+      const onlineUsers = getOnlineUsersSnapshot();
+      if (wsHelpers.broadcastToUser) {
+        onlineUsers.forEach(userId => {
+          wsHelpers.broadcastToUser!(userId, {
+            type: "community-chat:clear"
+          });
+        });
+      }
+      
+      res.json({ success: true, message: "Sve poruke su obrisane" });
+    } catch (error) {
+      console.error("Error clearing community messages:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
   // DELETE /api/community-chat/:id - Delete a community message
   app.delete("/api/community-chat/:id", requireNotBanned, async (req, res) => {
     try {
@@ -1961,28 +1984,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       console.error("Error deleting community message:", error);
-      res.status(500).json({ error: "Greška na serveru" });
-    }
-  });
-
-  // DELETE /api/community-chat/clear - Clear all community messages (ADMIN only)
-  app.delete("/api/community-chat/clear", requireAdmin, async (req, res) => {
-    try {
-      await storage.clearAllCommunityMessages();
-      
-      // Broadcast clear to all online users
-      const onlineUsers = getOnlineUsersSnapshot();
-      if (wsHelpers.broadcastToUser) {
-        onlineUsers.forEach(userId => {
-          wsHelpers.broadcastToUser!(userId, {
-            type: "community-chat:clear"
-          });
-        });
-      }
-      
-      res.json({ success: true, message: "Sve poruke su obrisane" });
-    } catch (error) {
-      console.error("Error clearing community messages:", error);
       res.status(500).json({ error: "Greška na serveru" });
     }
   });
