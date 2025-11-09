@@ -2,8 +2,7 @@ import { Link } from "wouter";
 import { AlertCircle, CheckCircle2, Clock, CreditCard, FileText, Shield, ArrowLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FadeIn } from "@/components/motion/FadeIn";
-import { StaggerContainer } from "@/components/motion/StaggerContainer";
+import { FadeInWhenVisible } from "@/components/motion/FadeIn";
 
 export default function Terms() {
   const termsSection = [
@@ -74,7 +73,7 @@ export default function Terms() {
   return (
     <div className="min-h-screen py-12 lg:py-20">
       <div className="max-w-5xl mx-auto px-4 md:px-6">
-        <FadeIn delay={0.1}>
+        <FadeInWhenVisible delay={0.1}>
           <div className="mb-8">
             <Link href="/">
               <Button variant="ghost" data-testid="button-back-home">
@@ -83,9 +82,9 @@ export default function Terms() {
               </Button>
             </Link>
           </div>
-        </FadeIn>
+        </FadeInWhenVisible>
 
-        <FadeIn delay={0.2}>
+        <FadeInWhenVisible delay={0}>
           <div className="mb-16 text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight" data-testid="text-terms-title">
               Pravila i Uslovi
@@ -95,12 +94,11 @@ export default function Terms() {
               kako bismo zajedno obezbedili uspešnu saradnju.
             </p>
           </div>
-        </FadeIn>
+        </FadeInWhenVisible>
 
-        <StaggerContainer>
-          <div className="space-y-8">
-            {termsSection.map((section, index) => (
-              <FadeIn key={index} delay={0.3 + index * 0.05}>
+        <div className="space-y-8">
+          {termsSection.map((section, index) => (
+            <FadeInWhenVisible key={index} delay={index * 0.05}>
                 <Card data-testid={`card-terms-${index}`} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
                   <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
                     <CardTitle className="flex items-center gap-4 text-2xl">
@@ -124,12 +122,11 @@ export default function Terms() {
                     </ul>
                   </CardContent>
                 </Card>
-              </FadeIn>
+              </FadeInWhenVisible>
             ))}
           </div>
-        </StaggerContainer>
 
-        <FadeIn delay={0.8}>
+        <FadeInWhenVisible delay={0}>
           <Card className="mt-16 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 shadow-lg">
             <CardContent className="p-8 md:p-10">
               <div className="flex flex-col md:flex-row items-start gap-6">
@@ -153,9 +150,9 @@ export default function Terms() {
               </div>
             </CardContent>
           </Card>
-        </FadeIn>
+        </FadeInWhenVisible>
 
-        <FadeIn delay={0.9}>
+        <FadeInWhenVisible delay={0}>
           <Card className="mt-8 border-muted-foreground/20">
             <CardContent className="p-8 md:p-10">
               <div className="flex flex-col md:flex-row items-start gap-6">
@@ -175,9 +172,9 @@ export default function Terms() {
               </div>
             </CardContent>
           </Card>
-        </FadeIn>
+        </FadeInWhenVisible>
 
-        <FadeIn delay={1.0}>
+        <FadeInWhenVisible delay={0}>
           <div className="mt-16 text-center">
             <Link href="/kontakt">
               <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300" data-testid="button-contact-terms">
@@ -185,7 +182,7 @@ export default function Terms() {
               </Button>
             </Link>
           </div>
-        </FadeIn>
+        </FadeInWhenVisible>
       </div>
     </div>
   );
