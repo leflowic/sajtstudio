@@ -141,7 +141,7 @@ export function ContractsTab() {
             </CardHeader>
             <CardContent>
               <Tabs value={selectedContractType} onValueChange={(v) => setSelectedContractType(v as any)}>
-                <TabsList className="flex flex-col lg:grid lg:grid-cols-3 w-full gap-2 bg-transparent p-0">
+                <TabsList className="flex flex-col lg:grid lg:grid-cols-3 w-full gap-2 bg-transparent p-0 h-auto mb-8">
                   <TabsTrigger value="mix_master" className="flex items-center justify-center gap-2" data-testid="tab-contract-mix-master">
                     <Music className="w-4 h-4" />
                     Mix & Master
@@ -156,19 +156,17 @@ export function ContractsTab() {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="pt-16">
-                  <TabsContent value="mix_master">
-                    <MixMasterForm onSubmit={(data) => generateMutation.mutate({ contractType: "mix_master", contractData: data })} isSubmitting={generateMutation.isPending} />
-                  </TabsContent>
+                <TabsContent value="mix_master">
+                  <MixMasterForm onSubmit={(data) => generateMutation.mutate({ contractType: "mix_master", contractData: data })} isSubmitting={generateMutation.isPending} />
+                </TabsContent>
 
-                  <TabsContent value="copyright_transfer">
-                    <CopyrightTransferForm onSubmit={(data) => generateMutation.mutate({ contractType: "copyright_transfer", contractData: data })} isSubmitting={generateMutation.isPending} />
-                  </TabsContent>
+                <TabsContent value="copyright_transfer">
+                  <CopyrightTransferForm onSubmit={(data) => generateMutation.mutate({ contractType: "copyright_transfer", contractData: data })} isSubmitting={generateMutation.isPending} />
+                </TabsContent>
 
-                  <TabsContent value="instrumental_sale">
-                    <InstrumentalSaleForm onSubmit={(data) => generateMutation.mutate({ contractType: "instrumental_sale", contractData: data })} isSubmitting={generateMutation.isPending} />
-                  </TabsContent>
-                </div>
+                <TabsContent value="instrumental_sale">
+                  <InstrumentalSaleForm onSubmit={(data) => generateMutation.mutate({ contractType: "instrumental_sale", contractData: data })} isSubmitting={generateMutation.isPending} />
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
