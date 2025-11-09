@@ -1093,12 +1093,23 @@ export class DatabaseStorage implements IStorage {
     if (!conversation) return [];
 
     const msgs = await db
-      .select()
+      .select({
+        id: messages.id,
+        conversationId: messages.conversationId,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        content: messages.content,
+        imageUrl: messages.imageUrl,
+        createdAt: messages.createdAt,
+        deleted: messages.deleted,
+        senderUsername: users.username,
+      })
       .from(messages)
+      .leftJoin(users, eq(messages.senderId, users.id))
       .where(eq(messages.conversationId, conversation.id))
       .orderBy(messages.createdAt);
 
-    return msgs;
+    return msgs as any;
   }
 
   async adminDeleteMessage(messageId: number): Promise<boolean> {
