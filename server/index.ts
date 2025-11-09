@@ -10,10 +10,10 @@ import { setBroadcastFunction, setNotificationFunction, setOnlineUsersAccessor }
 
 const app = express();
 
-// Enable gzip compression for all responses
+// Enable gzip/brotli compression for all responses (LCP optimization)
 app.use(compression({
-  level: 6,
-  threshold: 1024, // Only compress responses larger than 1KB
+  level: 9, // Maximum compression for production
+  threshold: 512, // Compress responses larger than 512 bytes
   filter: (req: Request, res: Response) => {
     if (req.headers['x-no-compression']) {
       return false;
@@ -22,15 +22,29 @@ app.use(compression({
   }
 }));
 
-// Serve static files from attached_assets directory with cache headers
+// Serve static files from attached_assets directory with aggressive cache headers (LCP optimization)
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets'), {
   maxAge: '1y',
   immutable: true,
+  setHeaders: (res, filePath) => {
+    // Add Cache-Control headers for optimal caching
+    if (filePath.endsWith('.webp') || filePath.endsWith('.jpg') || filePath.endsWith('.png')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
 }));
 
-// Serve static files from public directory (Open Graph images, etc.)
+// Serve static files from public directory (Open Graph images, etc.) with optimized caching
 app.use('/public', express.static(path.join(process.cwd(), 'public'), {
-  maxAge: '1d',
+  maxAge: '7d',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.jpg') || filePath.endsWith('.png') || filePath.endsWith('.webp')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
+    }
+  }
 }));
 
 // Trust proxy - omogućava dobijanje prave IP adrese klijenta

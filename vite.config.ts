@@ -47,24 +47,64 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react/jsx-runtime'],
+        manualChunks(id) {
+          // React core bundle
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react';
+          }
+          // UI components bundle (shadcn, radix)
+          if (id.includes('node_modules/@radix-ui') || id.includes('components/ui')) {
+            return 'vendor-ui';
+          }
+          // Form & validation bundle
+          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/zod') || id.includes('node_modules/@hookform')) {
+            return 'vendor-forms';
+          }
+          // React Query bundle
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'vendor-query';
+          }
+          // Animation libraries
+          if (id.includes('node_modules/framer-motion')) {
+            return 'vendor-motion';
+          }
+          // Icons bundle
+          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/react-icons')) {
+            return 'vendor-icons';
+          }
+          // Rich text editor
+          if (id.includes('node_modules/@tiptap')) {
+            return 'vendor-editor';
+          }
+          // Remaining vendor code
+          if (id.includes('node_modules')) {
+            return 'vendor-other';
+          }
         },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    cssMinify: true,
+    cssMinify: 'esbuild',
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        passes: 2,
       },
       mangle: {
         safari10: true,
       },
+      format: {
+        comments: false,
+      },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 600,
+    reportCompressedSize: false,
+    sourcemap: false,
   },
   server: {
     host: "0.0.0.0",

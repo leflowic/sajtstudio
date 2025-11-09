@@ -35,23 +35,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#4542f5" />
 
-    <!-- Preload critical hero image for LCP optimization (WebP for 95% size reduction) -->
-    <link
-      rel="preload"
-      as="image"
-      href="/attached_assets/generated_images/hero-optimized.webp"
-      type="image/webp"
-      fetchpriority="high"
-    />
+    <!-- Critical inline CSS for LCP optimization - prevents FOUC and speeds up rendering -->
+    <style>
+      html{scroll-behavior:smooth}body{margin:0;font-family:Inter,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}#root{min-height:100vh}@media(prefers-reduced-motion:reduce){*,::after,::before{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+    </style>
 
-    <!-- DNS Prefetch & Preconnect for external resources -->
+    <!-- DNS Prefetch & Preconnect for external resources (LCP optimization) -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     <link rel="dns-prefetch" href="https://utfs.io" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Optimized font loading with font-display: swap -->
+    <!-- Optimized async font loading with font-display: swap (LCP optimization) -->
     <link
       rel="preload"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap"
@@ -63,6 +59,19 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap"
         rel="stylesheet"
     /></noscript>
+
+    <!-- Preload critical hero image for LCP optimization -->
+    <link
+      rel="preload"
+      as="image"
+      href="/equipment/hero-studio-background.jpg"
+      fetchpriority="high"
+      imagesrcset="/equipment/hero-studio-background.jpg"
+      imagesizes="100vw"
+    />
+
+    <!-- Modulepreload for faster JavaScript loading -->
+    <link rel="modulepreload" href="/src/main.tsx" />
   </head>
   <body>
     <div id="root"></div>

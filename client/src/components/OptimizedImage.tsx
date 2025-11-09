@@ -5,6 +5,7 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
   alt: string;
   priority?: boolean;
   className?: string;
+  sizes?: string;
 }
 
 export function OptimizedImage({ 
@@ -12,6 +13,7 @@ export function OptimizedImage({
   alt, 
   priority = false,
   className = "",
+  sizes,
   ...props 
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -28,7 +30,15 @@ export function OptimizedImage({
     ...props
   };
 
-  // fetchpriority is a valid HTML attribute but not yet in React's types
+  // Add sizes attribute for responsive images (LCP optimization)
+  if (sizes) {
+    imgAttributes.sizes = sizes;
+  } else if (priority) {
+    // Default sizes for priority images (hero images typically full width)
+    imgAttributes.sizes = '100vw';
+  }
+
+  // fetchpriority is a valid HTML attribute but not yet in React's types (LCP optimization)
   if (priority) {
     imgAttributes.fetchpriority = "high";
   }
