@@ -142,31 +142,35 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
       margins: { top: 50, bottom: 50, left: 72, right: 72 }
     });
     
+    // Register DejaVu Sans font for Serbian characters support
+    doc.registerFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    doc.registerFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf');
+    
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => resolve(Buffer.concat(buffers)));
     doc.on('error', reject);
 
     // Header
-    doc.fontSize(14).font('Helvetica-Bold').text('UGOVOR O PRUŽANJU USLUGA MIXINGA I MASTERINGA', { align: 'center' });
+    doc.fontSize(14).font('DejaVuSans-Bold').text('UGOVOR O PRUŽANJU USLUGA MIXINGA I MASTERINGA', { align: 'center' });
     doc.moveDown(2);
 
     // Contract metadata
-    doc.fontSize(10).font('Helvetica')
+    doc.fontSize(10).font('DejaVuSans')
       .text(`Zaključen dana ${data.contractDate} godine u ${data.contractPlace}, između sledećih ugovornih strana:`, { align: 'left' });
     doc.moveDown();
 
     // Pružalac usluge
-    doc.fontSize(11).font('Helvetica-Bold').text('1. Pružalac usluge (Studio)');
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(11).font('DejaVuSans-Bold').text('1. Pružalac usluge (Studio)');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ime i prezime / poslovno ime: ${data.studioName}`);
     doc.text(`Adresa: ${data.studioAddress}`);
     doc.text(`Matični broj: ${data.studioMaticniBroj}`);
     doc.moveDown();
 
     // Naručilac
-    doc.fontSize(11).font('Helvetica-Bold').text('2. Naručilac usluge');
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(11).font('DejaVuSans-Bold').text('2. Naručilac usluge');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ime i prezime / poslovno ime: ${data.clientName}`);
     doc.text(`Adresa: ${data.clientAddress}`);
     doc.text(`Matični broj: ${data.clientMaticniBroj}`);
@@ -176,9 +180,9 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 1
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 1. Predmet ugovora', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 1. Predmet ugovora', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Predmet ovog ugovora je pružanje usluge profesionalnog miksanja i masteringa sledećeg muzičkog dela:');
     doc.moveDown(0.5);
     doc.text(`Naziv pesme / projekta: ${data.projectName}`);
@@ -186,9 +190,9 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 2
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 2. Obaveze Pružaoca usluge', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 2. Obaveze Pružaoca usluge', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Pružalac usluge se obavezuje da:');
     doc.text('– izvrši tehničku obradu materijala (mix i mastering) prema profesionalnim standardima;');
     doc.text(`– isporuči finalne fajlove u formatu: ${data.deliveryFormat}`);
@@ -196,9 +200,9 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 3
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 3. Obaveze Naručioca', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 3. Obaveze Naručioca', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Naručilac se obavezuje da:');
     doc.text('– dostavi sve potrebne fajlove i informacije potrebne za rad na projektu;');
     doc.text('– blagovremeno odobri radne verzije ili dostavi primedbe;');
@@ -206,9 +210,9 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 4
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 4. Naknada i uslovi plaćanja', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 4. Naknada i uslovi plaćanja', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ukupna naknada za izvršenje usluge iznosi: ${data.totalAmount} RSD / EUR.`);
     doc.moveDown(0.5);
     doc.text('Raspored plaćanja:');
@@ -220,9 +224,9 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 5
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 5. Odgovornost i reklamacije', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 5. Odgovornost i reklamacije', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Pružalac usluge garantuje kvalitet obrade prema profesionalnim standardima.');
     doc.text('Naručilac ima pravo na do dve runde revizija finalne verzije.');
     doc.text('Naknadne izmene i dodatne revizije se naplaćuju po dogovoru.');
@@ -230,17 +234,17 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 6
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 6. Autorska prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 6. Autorska prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Ovim ugovorom Pružalac usluge ne stiče nikakva autorska prava na muzičko delo koje je predmet obrade.');
     doc.text('Sva autorska prava na pesmu i originalne snimke ostaju u vlasništvu Naručioca.');
     doc.moveDown(2);
 
     // Član 7 - Snimanje vokala
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 7. Snimanje vokala i prava na snimke', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 7. Snimanje vokala i prava na snimke', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Snimanje vokala je izvršeno u studiju LeFlow Studio: ${data.vocalRecording === 'yes' ? 'DA' : 'NE'}`);
     doc.moveDown(0.5);
     
@@ -257,23 +261,23 @@ export function generateMixMasterPDF(data: MixMasterContract): Promise<Buffer> {
     doc.moveDown(2);
 
     // Član 8
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 8. Nadležnost', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 8. Nadležnost', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Za rešavanje eventualnih sporova nadležan je sud u: ${data.jurisdiction}`);
     doc.moveDown(2);
 
     // Član 9
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 9. Završne odredbe', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 9. Završne odredbe', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ovaj ugovor je sačinjen u ${data.copies} istovetnih primeraka, od kojih svaka ugovorna strana zadržava po jedan.`);
     doc.moveDown();
     doc.text('Potpisivanjem ugovora, strane potvrđuju da su saglasne sa svim odredbama i da ga zaključuju slobodnom voljom.');
     doc.moveDown(3);
 
     // Signatures
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('____________________________', 100, doc.y, { continued: true, width: 200 });
     doc.text('____________________________', 320, doc.y - doc.currentLineHeight(), { width: 200 });
     doc.moveDown(0.3);
@@ -296,33 +300,37 @@ export function generateCopyrightTransferPDF(data: CopyrightTransferContract): P
       margins: { top: 50, bottom: 50, left: 72, right: 72 }
     });
     
+    // Register DejaVu Sans font for Serbian characters support
+    doc.registerFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    doc.registerFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf');
+    
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => resolve(Buffer.concat(buffers)));
     doc.on('error', reject);
 
     // Header
-    doc.fontSize(14).font('Helvetica-Bold').text('UGOVOR O PRENOSU IMOVINSKIH AUTORSKIH PRAVA', { align: 'center' });
+    doc.fontSize(14).font('DejaVuSans-Bold').text('UGOVOR O PRENOSU IMOVINSKIH AUTORSKIH PRAVA', { align: 'center' });
     doc.moveDown(2);
 
     // Contract metadata
-    doc.fontSize(10).font('Helvetica')
+    doc.fontSize(10).font('DejaVuSans')
       .text(`Zaključen dana ${data.contractDate} godine u ${data.contractPlace}, između sledećih ugovornih strana:`, { align: 'left' });
     doc.moveDown(2);
 
     // Autor/Prodavac
-    doc.fontSize(12).font('Helvetica-Bold').text('1. Autor/Prodavac', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('1. Autor/Prodavac', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ime i prezime / poslovno ime: ${data.authorName}`);
     doc.text(`Adresa: ${data.authorAddress}`);
     doc.text(`Matični broj: ${data.authorMaticniBroj}`);
     doc.moveDown(2);
 
     // Kupac
-    doc.fontSize(12).font('Helvetica-Bold').text('2. Kupac', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('2. Kupac', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ime i prezime / poslovno ime: ${data.buyerName}`);
     doc.text(`Adresa: ${data.buyerAddress}`);
     doc.text(`Matični broj: ${data.buyerMaticniBroj}`);
@@ -332,9 +340,9 @@ export function generateCopyrightTransferPDF(data: CopyrightTransferContract): P
     doc.moveDown(3);
 
     // Član 1
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 1. Predmet ugovora', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 1. Predmet ugovora', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Predmet ovog ugovora je prenos imovinskih autorskih prava na sledećem autorskom delu:');
     doc.moveDown(0.5);
     doc.text(`Naziv pesme: ${data.songTitle}`);
@@ -348,9 +356,9 @@ export function generateCopyrightTransferPDF(data: CopyrightTransferContract): P
     doc.moveDown(2);
 
     // Član 2
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 2. Vrsta prenosa prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 2. Vrsta prenosa prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Autor prenosi sledeća imovinska autorska prava:');
     doc.text(data.rightsType === 'exclusive' ? '☑ Isključiva prava' : '☑ Neisključiva prava');
     doc.moveDown();
@@ -363,23 +371,23 @@ export function generateCopyrightTransferPDF(data: CopyrightTransferContract): P
     doc.moveDown(2);
 
     // Član 3
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 3. Teritorija korišćenja', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 3. Teritorija korišćenja', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Prenos prava se odnosi na teritoriju: ${data.territory}`);
     doc.moveDown(2);
 
     // Član 4
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 4. Trajanje prenosa prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 4. Trajanje prenosa prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Prenos prava se zaključuje na period: ${data.duration}`);
     doc.moveDown(2);
 
     // Član 5
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 5. Naknada i uslovi plaćanja', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 5. Naknada i uslovi plaćanja', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Kupac se obavezuje da Autor/Prodavcu isplati ukupan iznos naknade u visini od: ${data.totalAmount} RSD / EUR`);
     doc.moveDown();
     doc.text('Raspored plaćanja:');
@@ -391,40 +399,40 @@ export function generateCopyrightTransferPDF(data: CopyrightTransferContract): P
     doc.moveDown(2);
 
     // Član 6
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 6. Podela prihoda od korišćenja dela (Streaming servis)', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 6. Podela prihoda od korišćenja dela (Streaming servis)', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Ugovorne strane su saglasne da se prihod ostvaren od eksploatacije dela deli na sledeći način:');
     doc.text(`– Procenat prihoda koji pripada Autor/Prodavcu: ${data.authorPercentage}%`);
     doc.text(`– Procenat prihoda koji pripada Kupcu: ${data.buyerPercentage}%`);
     doc.moveDown(2);
 
     // Član 7
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 7. Moralna prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 7. Moralna prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Autor zadržava moralna prava na delu, uključujući:');
     doc.text('– Pravo da bude priznat i označen kao autor dela;');
     doc.text('– Pravo da delo ne bude menjano, obrađivano ili prilagođavano bez njegove prethodne pisane saglasnosti.');
     doc.moveDown(2);
 
     // Član 8
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 8. Nadležnost', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 8. Nadležnost', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Za tumačenje i sprovođenje ovog ugovora nadležan je sud u: ${data.jurisdiction}`);
     doc.moveDown(2);
 
     // Član 9
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 9. Završne odredbe', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 9. Završne odredbe', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ovaj ugovor je sačinjen u ${data.copies} istovetnih primeraka, od kojih svaka ugovorna strana zadržava po jedan.`);
     doc.text('Potpisivanjem ugovora strane potvrđuju da su saglasne sa svim odredbama i da ga zaključuju slobodnom voljom.');
     doc.moveDown(3);
 
     // Signatures
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('____________________________', { align: 'left' });
     doc.text('Autor/Prodavac', { align: 'left' });
     doc.moveDown(2);
@@ -447,31 +455,35 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
       margins: { top: 50, bottom: 50, left: 72, right: 72 }
     });
     
+    // Register DejaVu Sans font for Serbian characters support
+    doc.registerFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    doc.registerFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf');
+    
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => resolve(Buffer.concat(buffers)));
     doc.on('error', reject);
 
     // Header
-    doc.fontSize(14).font('Helvetica-Bold').text('UGOVOR O PRODAJI INSTRUMENTALA', { align: 'center' });
+    doc.fontSize(14).font('DejaVuSans-Bold').text('UGOVOR O PRODAJI INSTRUMENTALA', { align: 'center' });
     doc.moveDown(2);
 
     // Contract metadata
-    doc.fontSize(10).font('Helvetica')
+    doc.fontSize(10).font('DejaVuSans')
       .text(`Zaključen dana ${data.contractDate} godine u ${data.contractPlace}, između sledećih ugovornih strana:`, { align: 'left' });
     doc.moveDown();
 
     // Autor/Prodavac
-    doc.fontSize(11).font('Helvetica-Bold').text('1. Autor/Prodavac (Studio)');
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(11).font('DejaVuSans-Bold').text('1. Autor/Prodavac (Studio)');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ime i prezime / poslovno ime: ${data.authorName}`);
     doc.text(`Adresa: ${data.authorAddress}`);
     doc.text(`Matični broj: ${data.authorMaticniBroj}`);
     doc.moveDown();
 
     // Kupac
-    doc.fontSize(11).font('Helvetica-Bold').text('2. Kupac');
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(11).font('DejaVuSans-Bold').text('2. Kupac');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ime i prezime / poslovno ime: ${data.buyerName}`);
     doc.text(`Adresa: ${data.buyerAddress}`);
     doc.text(`Matični broj: ${data.buyerMaticniBroj}`);
@@ -481,9 +493,9 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
     doc.moveDown(2);
 
     // Član 1
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 1. Predmet ugovora', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 1. Predmet ugovora', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Predmet ovog ugovora je prodaja sledećeg muzičkog instrumentala:');
     doc.moveDown(0.5);
     doc.text(`Naziv instrumentala: ${data.instrumentalName}`);
@@ -491,9 +503,9 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
     doc.moveDown(2);
 
     // Član 2
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 2. Vrsta prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 2. Vrsta prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Autor/Prodavac prenosi sledeća imovinska prava na instrumental:');
     doc.moveDown();
     doc.text(data.rightsType === 'exclusive' ? '☑ Isključiva prava' : '☑ Neisključiva prava');
@@ -507,23 +519,23 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
     doc.moveDown(2);
 
     // Član 3
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 3. Teritorija korišćenja', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 3. Teritorija korišćenja', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Prenos prava odnosi se na teritoriju: ${data.territory}`);
     doc.moveDown(2);
 
     // Član 4
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 4. Trajanje prenosa prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 4. Trajanje prenosa prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Prenos prava se zaključuje na period: ${data.durationPeriod}`);
     doc.moveDown(2);
 
     // Član 5
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 5. Naknada i uslovi plaćanja', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 5. Naknada i uslovi plaćanja', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ukupna naknada za prodaju instrumentala iznosi: ${data.totalAmount} RSD / EUR.`);
     doc.moveDown();
     doc.text('Raspored plaćanja:');
@@ -536,41 +548,41 @@ export function generateInstrumentalSalePDF(data: InstrumentalSaleContract): Pro
     doc.moveDown(2);
 
     // Član 6
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 6. Podela prihoda od korišćenja', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 6. Podela prihoda od korišćenja', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Ugovorne strane se saglasne da se prihod od korišćenja instrumentala deli na sledeći način:');
     doc.text(`– Procenat prihoda koji pripada Autor/Prodavcu: ${data.authorPercentage}%`);
     doc.text(`– Procenat prihoda koji pripada Kupcu: ${data.buyerPercentage}%`);
     doc.moveDown(2);
 
     // Član 7
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 7. Moralna prava', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 7. Moralna prava', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('Autor zadržava moralna prava na delu, uključujući:');
     doc.text('– Pravo da bude priznat i označen kao autor instrumentala.');
     doc.text('– Pravo da delo ne bude menjano bez njegove prethodne pisane saglasnosti.');
     doc.moveDown(2);
 
     // Član 8
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 8. Nadležnost', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 8. Nadležnost', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Za rešavanje eventualnih sporova nadležan je sud u: ${data.jurisdiction}`);
     doc.moveDown(2);
 
     // Član 9
-    doc.fontSize(12).font('Helvetica-Bold').text('Član 9. Završne odredbe', { align: 'center' });
+    doc.fontSize(12).font('DejaVuSans-Bold').text('Član 9. Završne odredbe', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text(`Ovaj ugovor je sačinjen u ${data.copies} istovetnih primeraka, od kojih svaka ugovorna strana zadržava po jedan.`);
     doc.moveDown();
     doc.text('Potpisivanjem ugovora strane potvrđuju da su saglasne sa svim odredbama i da ga zaključuju slobodnom voljom.');
     doc.moveDown(3);
 
     // Signatures
-    doc.fontSize(10).font('Helvetica');
+    doc.fontSize(10).font('DejaVuSans');
     doc.text('____________________________', { align: 'left' });
     doc.text('Autor/Prodavac', { align: 'left' });
     doc.moveDown(2);
