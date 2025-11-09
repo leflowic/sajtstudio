@@ -52,7 +52,7 @@ import {
   registrationAttempts,
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Store } from "express-session";
@@ -1677,7 +1677,14 @@ export class DatabaseStorage implements IStorage {
 
   // Invoices
   async createInvoice(data: InsertInvoice): Promise<Invoice> {
-    const [invoice] = await db.insert(invoices).values(data).returning();
+    // Convert amount to string for numeric column and dates to Date objects
+    const invoiceData = {
+      ...data,
+      amount: typeof data.amount === 'number' ? data.amount.toString() : data.amount,
+      dueDate: typeof data.dueDate === 'string' ? new Date(data.dueDate) : data.dueDate,
+      paidDate: data.paidDate ? (typeof data.paidDate === 'string' ? new Date(data.paidDate) : data.paidDate) : null,
+    };
+    const [invoice] = await db.insert(invoices).values([invoiceData]).returning();
     if (!invoice) throw new Error("Failed to create invoice");
     return invoice;
   }
@@ -1697,9 +1704,12 @@ export class DatabaseStorage implements IStorage {
         currency: invoices.currency,
         status: invoices.status,
         description: invoices.description,
+        notes: invoices.notes,
         issuedDate: invoices.issuedDate,
         dueDate: invoices.dueDate,
         paidDate: invoices.paidDate,
+        createdAt: invoices.createdAt,
+        createdBy: invoices.createdBy,
         contractNumber: contracts.contractNumber,
         contractType: contracts.contractType,
       })
@@ -1717,9 +1727,12 @@ export class DatabaseStorage implements IStorage {
       currency: r.currency,
       status: r.status,
       description: r.description,
+      notes: r.notes,
       issuedDate: r.issuedDate,
       dueDate: r.dueDate,
       paidDate: r.paidDate,
+      createdAt: r.createdAt,
+      createdBy: r.createdBy,
       contractNumber: r.contractNumber,
       contractType: r.contractType,
     }));
@@ -1752,6 +1765,7 @@ export class DatabaseStorage implements IStorage {
         genre: projects.genre,
         mp3Url: projects.mp3Url,
         uploadDate: projects.uploadDate,
+        votesCount: projects.votesCount,
         currentMonth: projects.currentMonth,
         approved: projects.approved,
         status: projects.status,
@@ -1770,6 +1784,7 @@ export class DatabaseStorage implements IStorage {
       genre: r.genre,
       mp3Url: r.mp3Url,
       uploadDate: r.uploadDate,
+      votesCount: r.votesCount,
       currentMonth: r.currentMonth,
       approved: r.approved,
       status: r.status,
@@ -1778,25 +1793,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserContracts(userId: number): Promise<Array<Contract & { username: string }>> {
-    // Get user to match contracts by email
+    // Get user to match contracts by userId or email
     const user = await this.getUser(userId);
     if (!user) return [];
     
-    // Get contracts where user's email matches contractData.clientEmail using JOIN
+    // Get contracts where:
+    // 1. userId matches directly (preferred), OR
+    // 2. clientEmail matches user's email (fallback for older contracts)
     const results = await db
       .select({
         id: contracts.id,
         contractNumber: contracts.contractNumber,
         contractType: contracts.contractType,
         clientEmail: contracts.clientEmail,
+        userId: contracts.userId,
         pdfPath: contracts.pdfPath,
         contractData: contracts.contractData,
         createdAt: contracts.createdAt,
+        createdBy: contracts.createdBy,
         username: users.username,
       })
       .from(contracts)
       .leftJoin(users, eq(contracts.clientEmail, users.email))
-      .where(eq(contracts.clientEmail, user.email))
+      .where(
+        or(
+          eq(contracts.userId, userId),
+          eq(contracts.clientEmail, user.email)
+        )
+      )
       .orderBy(desc(contracts.createdAt));
     
     return results.map(r => ({
@@ -1804,9 +1828,11 @@ export class DatabaseStorage implements IStorage {
       contractNumber: r.contractNumber,
       contractType: r.contractType,
       clientEmail: r.clientEmail,
+      userId: r.userId,
       pdfPath: r.pdfPath,
       contractData: r.contractData,
       createdAt: r.createdAt,
+      createdBy: r.createdBy,
       username: r.username || "Unknown",
     }));
   }
@@ -1917,6 +1943,7 @@ export class DatabaseStorage implements IStorage {
         currentMonth: projects.currentMonth,
         uploadDate: projects.uploadDate,
         approved: projects.approved,
+        status: projects.status,
         username: users.username,
       })
       .from(projects)

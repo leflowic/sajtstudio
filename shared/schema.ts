@@ -556,6 +556,7 @@ export const contracts = pgTable("contracts", {
   contractData: json("contract_data").notNull(), // All contract-specific fields stored as JSON
   pdfPath: text("pdf_path"), // Path to generated PDF file
   clientEmail: text("client_email"), // Client's email for sending contract
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }), // Optional: Direct link to user account
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdBy: integer("created_by").notNull().references(() => users.id), // Admin who created the contract
 });
@@ -568,6 +569,7 @@ export const insertContractSchema = createInsertSchema(contracts).omit({
   contractType: z.enum(["mix_master", "copyright_transfer", "instrumental_sale"]),
   contractData: z.object({}).passthrough(), // Accept any valid JSON object
   clientEmail: z.string().email("Nevažeća email adresa").optional().or(z.literal("")),
+  userId: z.number().int().positive().optional().nullable(),
 });
 
 export type InsertContract = z.infer<typeof insertContractSchema>;
