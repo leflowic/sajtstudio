@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { wsHelpers, notifyUser, getOnlineUsersSnapshot } from "./websocket-helpers";
-import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, insertUserSongSchema, insertNewsletterSubscriberSchema, insertInvoiceSchema, mixMasterContractDataSchema, copyrightTransferContractDataSchema, instrumentalSaleContractDataSchema, type CmsContent, type CmsMedia, type VideoSpot, type UserSong } from "@shared/schema";
+import { insertContactSubmissionSchema, insertCmsContentSchema, insertCmsMediaSchema, insertVideoSpotSchema, insertUserSongSchema, insertNewsletterSubscriberSchema, insertInvoiceSchema, insertCommunityMessageSchema, mixMasterContractDataSchema, copyrightTransferContractDataSchema, instrumentalSaleContractDataSchema, type CmsContent, type CmsMedia, type VideoSpot, type UserSong } from "@shared/schema";
 import { sendEmail, getLastVerificationCode } from "./resend-client";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import multer from "multer";
@@ -98,6 +98,10 @@ const contactRateLimits = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 sat u milisekundama
 const MAX_REQUESTS_PER_HOUR = 3;
 
+// Rate limiting za community chat - 10 sekundi između poruka
+const communityMessageRateLimits = new Map<number, number>();
+const COMMUNITY_MESSAGE_COOLDOWN = 10 * 1000; // 10 sekundi u milisekundama
+
 // Funkcija za dobijanje prave IP adrese klijenta (koristi Express req.ip koji je siguran)
 function getClientIp(req: any): string | null {
   // req.ip je automatski popunjen od Express-a kada je trust proxy omogućen
@@ -131,6 +135,26 @@ function checkContactRateLimit(ip: string): { allowed: boolean; remainingTime?: 
   contactRateLimits.set(ip, recentTimestamps);
   
   return { allowed: true };
+}
+
+// Funkcija za proveru rate limita za community chat poruke
+function canUserSendMessage(userId: number): boolean {
+  const now = Date.now();
+  const lastMessageTime = communityMessageRateLimits.get(userId);
+  
+  if (!lastMessageTime) {
+    communityMessageRateLimits.set(userId, now);
+    return true;
+  }
+  
+  const timeSinceLastMessage = now - lastMessageTime;
+  
+  if (timeSinceLastMessage < COMMUNITY_MESSAGE_COOLDOWN) {
+    return false;
+  }
+  
+  communityMessageRateLimits.set(userId, now);
+  return true;
 }
 
 // Middleware to check if user is banned
@@ -1320,6 +1344,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user rank (user, vip, legend, admin)
+  app.patch("/api/users/:userId/rank", requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Nevažeći ID korisnika" });
+      }
+      
+      // Validate rank
+      const rankSchema = z.object({ 
+        rank: z.enum(['user', 'vip', 'legend', 'admin']) 
+      });
+      const validated = rankSchema.parse(req.body);
+      
+      // Get user to notify them
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      // Update rank
+      await storage.updateUserRank(userId, validated.rank);
+      
+      // Notify user about rank change
+      const rankNames: Record<string, string> = {
+        user: 'Korisnik',
+        vip: 'VIP',
+        legend: 'Legenda',
+        admin: 'Administrator'
+      };
+      notifyUser(
+        userId,
+        "Rank ažuriran",
+        `Vaš rank je promenjen na: ${rankNames[validated.rank]}`
+      );
+      
+      res.json({ success: true, message: "Rank uspešno ažuriran" });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      }
+      console.error("Error updating user rank:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
   // Get all projects (approved and pending) for admin
   app.get("/api/admin/all-projects", requireAdmin, async (_req, res) => {
     try {
@@ -1789,6 +1859,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error toggling song vote:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // ============================================================================
+  // COMMUNITY CHAT ENDPOINTS
+  // ============================================================================
+
+  // GET /api/community-chat - Get community messages
+  app.get("/api/community-chat", requireNotBanned, async (req, res) => {
+    try {
+      const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 100);
+      const messages = await storage.getCommunityMessages(limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching community messages:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // POST /api/community-chat - Send a community message
+  app.post("/api/community-chat", requireVerifiedEmail, async (req, res) => {
+    try {
+      // Rate limit check using storage (persisted check)
+      const canSend = await storage.canUserSendMessage(req.user!.id);
+      if (!canSend) {
+        return res.status(429).json({ 
+          error: "Možete slati poruke samo jednom na 10 sekundi", 
+          retryAfterSeconds: 10 
+        });
+      }
+
+      // Validate message
+      const validated = insertCommunityMessageSchema.parse(req.body);
+      
+      // Create message
+      const createdMessage = await storage.createCommunityMessage(req.user!.id, validated.message);
+      
+      // Fetch enriched message data with username, rank, avatarUrl
+      const messages = await storage.getCommunityMessages(1);
+      const enrichedMessage = messages.find(m => m.id === createdMessage.id);
+      
+      if (!enrichedMessage) {
+        throw new Error("Failed to fetch enriched message data");
+      }
+      
+      // Broadcast to all online users
+      const onlineUsers = getOnlineUsersSnapshot();
+      if (wsHelpers.broadcastToUser) {
+        onlineUsers.forEach(userId => {
+          wsHelpers.broadcastToUser!(userId, {
+            type: "community-chat:new",
+            payload: enrichedMessage
+          });
+        });
+      }
+      
+      res.json(enrichedMessage);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Validacija nije uspela", details: error.errors });
+      }
+      if (error.message?.includes("10 sekundi")) {
+        return res.status(429).json({ 
+          error: error.message, 
+          retryAfterSeconds: 10 
+        });
+      }
+      console.error("Error creating community message:", error);
+      res.status(500).json({ error: "Greška na serveru" });
+    }
+  });
+
+  // DELETE /api/community-chat/:id - Delete a community message
+  app.delete("/api/community-chat/:id", requireNotBanned, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Nevažeći ID poruke" });
+      }
+      
+      const success = await storage.deleteCommunityMessage(messageId, req.user!.id);
+      
+      if (!success) {
+        return res.status(403).json({ error: "Nemate dozvolu da obrišete ovu poruku" });
+      }
+      
+      // Broadcast deletion to all online users
+      const onlineUsers = getOnlineUsersSnapshot();
+      if (wsHelpers.broadcastToUser) {
+        onlineUsers.forEach(userId => {
+          wsHelpers.broadcastToUser!(userId, {
+            type: "community-chat:delete",
+            payload: { id: messageId }
+          });
+        });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting community message:", error);
       res.status(500).json({ error: "Greška na serveru" });
     }
   });
