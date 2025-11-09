@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, User, Edit3, Save, MessageCircle, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogOut, User, Edit3, Save, MessageCircle, LayoutDashboard, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEditMode } from "@/contexts/EditModeContext";
@@ -52,13 +60,11 @@ export function Header() {
   };
 
   const navigation = [
-    { name: "Početna", href: "/" },
     { name: "Giveaway", href: "/giveaway" },
     { name: "Zajednica", href: "/zajednica" },
-    { name: "Pravila", href: "/pravila" },
-    { name: "Tim", href: "/tim" },
     { name: "Projekti", href: "/projekti" },
-    { name: "Kontakt", href: "/kontakt" }
+    { name: "Tim", href: "/tim" },
+    { name: "Pravila", href: "/pravila" }
   ];
 
   const isActive = (href: string) => {
@@ -162,56 +168,81 @@ export function Header() {
             </motion.div>
           </nav>
 
-          <div className="hidden xl:flex items-center gap-2">
+          <div className="hidden xl:flex items-center gap-3">
             <ThemeToggle />
             {user ? (
               <>
-                {user.emailVerified && (
-                  <>
-                    <Button variant="ghost" size="icon" asChild className="h-9 w-9">
-                      <Link href="/dashboard">
-                        <LayoutDashboard className="h-5 w-5" />
-                        <span className="sr-only">Dashboard</span>
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="icon" asChild className="relative h-9 w-9">
-                      <Link href="/inbox">
-                        <MessageCircle className="h-5 w-5" />
-                        {unreadCount > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                          >
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                          </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 gap-2 px-3" data-testid="button-user-menu">
+                      <Avatar className="h-7 w-7">
+                        {user.avatarUrl ? (
+                          <AvatarImage src={user.avatarUrl} alt={user.username} />
+                        ) : (
+                          <AvatarFallback className="bg-primary/10 text-xs">
+                            <User className="h-4 w-4 text-primary" />
+                          </AvatarFallback>
                         )}
-                        <span className="sr-only">Poruke ({unreadCount} nepročitanih)</span>
-                      </Link>
+                      </Avatar>
+                      <span className="text-sm font-medium">{user.username}</span>
+                      {user.emailVerified && unreadCount > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </Badge>
+                      )}
                     </Button>
-                  </>
-                )}
-                <Link href="/settings" className="hover-elevate rounded-full flex items-center">
-                  <Avatar className="h-9 w-9">
-                    {user.avatarUrl ? (
-                      <AvatarImage src={user.avatarUrl} alt={user.username} />
-                    ) : (
-                      <AvatarFallback className="bg-primary/10">
-                        <User className="h-5 w-5 text-primary" />
-                      </AvatarFallback>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">{user.username}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {user.emailVerified && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer" data-testid="link-dropdown-dashboard">
+                            <LayoutDashboard className="h-4 w-4" />
+                            Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/inbox" className="flex items-center gap-2 cursor-pointer" data-testid="link-dropdown-inbox">
+                            <MessageCircle className="h-4 w-4" />
+                            Poruke
+                            {unreadCount > 0 && (
+                              <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                              </Badge>
+                            )}
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
                     )}
-                  </Avatar>
-                  <span className="sr-only">Podešavanja</span>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
-                  className="h-9 w-9"
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span className="sr-only">Odjavi se</span>
-                </Button>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings" className="flex items-center gap-2 cursor-pointer" data-testid="link-dropdown-settings">
+                        <Settings className="h-4 w-4" />
+                        Podešavanja
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      disabled={logoutMutation.isPending}
+                      className="text-destructive focus:text-destructive cursor-pointer"
+                      data-testid="button-dropdown-logout"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Odjavi se
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <Link href="/prijava">
